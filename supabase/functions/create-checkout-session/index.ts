@@ -64,6 +64,7 @@ serve(async (req: Request) => {
     const prices = await stripe.prices.list({
       product: productId,
       active: true,
+      type: "one_time",
       limit: 1,
     });
 
@@ -79,6 +80,8 @@ serve(async (req: Request) => {
 
     const priceId = prices.data[0].id;
 
+    const frontendUrl = Deno.env.get("FRONTEND_URL") || "http://localhost:8080";
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -88,34 +91,14 @@ serve(async (req: Request) => {
           quantity: 1,
         },
       ],
-      mode: "subscription",
-      success_url: `${Deno.env.get("FRONTEND_URL")}/dashboard/profile?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${Deno.env.get("FRONTEND_URL")}/login`,
+      mode: "payment",
+      success_url: `${frontendUrl}/dashboard/profile?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/subscribe`,
       metadata: {
         phoneNumber,
         productId,
       },
     });
-
-    // Store session info in Supabase for later webhook processing
-    const { error: dbError } = await fetch(`${supabaseUrl}/rest/v1/checkout_sessions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${supabaseServiceRoleKey}`,
-        apikey: supabaseServiceRoleKey || "",
-      },
-      body: JSON.stringify({
-        phone_number: phoneNumber,
-        stripe_session_id: session.id,
-        status: "pending",
-        created_at: new Date().toISOString(),
-      }),
-    }).then((r) => r.json());
-
-    if (dbError) {
-      console.error("Database error:", dbError);
-    }
 
     return new Response(
       JSON.stringify({
