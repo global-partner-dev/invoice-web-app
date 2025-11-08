@@ -138,9 +138,14 @@ const Home = () => {
           <p className="text-xl text-muted-foreground mb-8">
             Join businesses saving time and reducing errors with automated invoice generation
           </p>
-          <Button asChild size="lg" className="shadow-elegant">
-            <Link to="/login">Start Now</Link>
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button asChild size="lg" className="shadow-elegant">
+              <Link to="/subscribe">Subscribe Now</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="shadow-elegant">
+              <Link to="/login">Login</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

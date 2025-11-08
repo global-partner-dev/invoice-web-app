@@ -6,44 +6,76 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { loginWithPhoneNumber, verifyOTP } from "@/lib/api";
 
 const Login = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    if (!phoneNumber) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Simulate login - will be replaced with actual backend logic
-    setTimeout(() => {
+    setIsLoading(true);
+    try {
+      await loginWithPhoneNumber(phoneNumber);
+      setShowOtpInput(true);
+      toast({
+        title: "OTP Sent",
+        description: "Check your phone for the verification code",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send OTP",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      
-      // Mock authentication logic
-      if (phoneNumber) {
-        toast({
-          title: "Login successful",
-          description: "Redirecting to dashboard...",
-        });
-        
-        // Mock role check - in real app this would come from backend
-        const isAdmin = phoneNumber.endsWith("0000");
-        
-        if (isAdmin) {
-          navigate("/admin/users");
-        } else {
-          navigate("/dashboard/profile");
-        }
-      } else {
-        toast({
-          title: "Error",
-          description: "Please enter a valid phone number",
-          variant: "destructive",
-        });
-      }
-    }, 1500);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otpCode) {
+      toast({
+        title: "Error",
+        description: "Please enter the OTP code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await verifyOTP(phoneNumber, otpCode);
+      toast({
+        title: "Login successful",
+        description: "Redirecting to dashboard...",
+      });
+      navigate("/dashboard/profile");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to verify OTP",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -52,45 +84,81 @@ const Login = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center">Welcome Back</CardTitle>
           <CardDescription className="text-center">
-            Enter your phone number to access your account
+            {showOtpInput ? "Enter the code sent to your phone" : "Enter your phone number to access your account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {!showOtpInput ? (
+            <form onSubmit={handleSendOTP} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+52 722 101 5653"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Send OTP"}
+              </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <a href="/subscribe" className="text-primary hover:underline font-medium">
+                  Subscribe now
+                </a>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="otp">Verification Code</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+52 722 101 5653"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-10"
+                  id="otp"
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  maxLength={6}
+                  disabled={isLoading}
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use phone number ending in 0000 to login as admin
-              </p>
-            </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Logging in..." : "Login"}
-            </Button>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Verifying..." : "Verify"}
+              </Button>
 
-            <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <a href="/?number=527221015653" className="text-primary hover:underline font-medium">
-                Subscribe now
-              </a>
-            </div>
-          </form>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowOtpInput(false);
+                  setOtpCode("");
+                }}
+              >
+                Back
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
