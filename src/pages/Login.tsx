@@ -47,18 +47,18 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4">
-      <Card className="w-full max-w-md shadow-elegant">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center">Welcome Back</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 md:py-12">
+      <Card className="w-full max-w-sm md:max-w-md shadow-elegant">
+        <CardHeader className="space-y-3 md:space-y-1">
+          <CardTitle className="text-2xl md:text-3xl font-bold text-center">Welcome Back</CardTitle>
+          <CardDescription className="text-sm md:text-base text-center">
             Enter your phone number and password to access your account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5 md:space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone" className="text-sm md:text-base">Phone Number</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -67,7 +67,7 @@ const Login = () => {
                   placeholder="+52 722 101 5653"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm md:text-base"
                   disabled={isLoading}
                   required
                 />
@@ -75,7 +75,7 @@ const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm md:text-base">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -84,7 +84,7 @@ const Login = () => {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm md:text-base"
                   disabled={isLoading}
                   required
                 />
@@ -93,13 +93,13 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full text-sm md:text-base py-2 md:py-2.5"
               disabled={isLoading}
             >
               {isLoading ? "Logging in..." : "Login"}
             </Button>
 
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-xs md:text-sm text-muted-foreground">
               Don't have an account?{" "}
               <a href="/subscribe" className="text-primary hover:underline font-medium">
                 Subscribe now
