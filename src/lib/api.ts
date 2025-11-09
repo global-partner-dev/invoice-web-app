@@ -300,13 +300,28 @@ export async function checkIfAdmin(email: string) {
 
 export async function getAllUsers() {
   try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("id, full_name, email, phone_number, created_at, updated_at")
-      .order("created_at", { ascending: false });
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
 
-    if (error) throw error;
-    return data || [];
+    if (!token) {
+      throw new Error("User is not authenticated");
+    }
+
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/get-all-users`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to fetch users");
+    }
+
+    const data = await response.json();
+    return data.data || [];
   } catch (error) {
     console.error("Get all users error:", error);
     throw error;

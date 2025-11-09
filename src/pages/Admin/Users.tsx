@@ -85,9 +85,12 @@ const Users = () => {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-lg flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                <p className="text-red-700">Failed to load users. Please try again later.</p>
+              <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-lg flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                  <p className="text-red-700">Failed to load users. Please try again later.</p>
+                </div>
+                <p className="text-red-600 text-sm font-mono">{error instanceof Error ? error.message : String(error)}</p>
               </div>
             )}
 

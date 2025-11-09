@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { getCurrentUser, checkIfAdmin } from "@/lib/api";
+import { checkIfAdmin } from "@/lib/api";
 
 interface User {
   id: string;
@@ -14,40 +14,63 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const authInitialized = useRef(false);
 
   useEffect(() => {
-    const checkUser = async () => {
+    let isMounted = true;
+    let unsubscribe: (() => void) | undefined;
+    let loadingTimeout: NodeJS.Timeout;
+
+    const checkAdminStatus = async (email: string) => {
       try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser || null);
-        if (currentUser?.email) {
-          const adminStatus = await checkIfAdmin(currentUser.email);
+        const adminStatus = await checkIfAdmin(email);
+        if (isMounted) {
           setIsAdmin(adminStatus);
         }
       } catch (err) {
-        setError(err instanceof Error ? err : new Error("Failed to get user"));
-      } finally {
-        setLoading(false);
+        console.error("Failed to check admin status:", err);
+        if (isMounted) {
+          setIsAdmin(false);
+        }
       }
     };
 
-    checkUser();
+    const handleAuthChange = (_event: string, session: unknown) => {
+      if (!isMounted) return;
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user || null);
-        if (session?.user?.email) {
-          const adminStatus = await checkIfAdmin(session.user.email);
-          setIsAdmin(adminStatus);
-        } else {
-          setIsAdmin(false);
-        }
+      const sess = session as { user?: { email?: string } } | null;
+      const currentUser = sess?.user;
+
+      setUser((currentUser as User) || null);
+
+      if (currentUser?.email) {
+        checkAdminStatus(currentUser.email);
+      } else {
+        setIsAdmin(false);
+      }
+
+      if (!authInitialized.current) {
+        authInitialized.current = true;
+        setLoading(false);
+        clearTimeout(loadingTimeout);
+      }
+    };
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(handleAuthChange);
+    unsubscribe = authListener?.subscription?.unsubscribe;
+
+    loadingTimeout = setTimeout(() => {
+      if (isMounted && !authInitialized.current) {
+        console.warn("Auth initialization timeout");
+        authInitialized.current = true;
         setLoading(false);
       }
-    );
+    }, 3000);
 
     return () => {
-      authListener?.subscription?.unsubscribe();
+      isMounted = false;
+      clearTimeout(loadingTimeout);
+      unsubscribe?.();
     };
   }, []);
 
