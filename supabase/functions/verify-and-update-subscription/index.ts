@@ -18,7 +18,7 @@ const corsHeaders = {
 
 interface VerifyRequest {
   sessionId: string;
-  phoneNumber: string;
+  email: string;
 }
 
 serve(async (req: Request) => {
@@ -28,16 +28,16 @@ serve(async (req: Request) => {
 
   try {
     const body: VerifyRequest = await req.json();
-    const { sessionId, phoneNumber } = body;
+    const { sessionId, email } = body;
 
-    if (!sessionId || !phoneNumber) {
+    if (!sessionId || !email) {
       return new Response(
-        JSON.stringify({ error: "Missing sessionId or phoneNumber" }),
+        JSON.stringify({ error: "Missing sessionId or email" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log(`Verifying session ${sessionId} for ${phoneNumber}`);
+    console.log(`Verifying session ${sessionId} for ${email}`);
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
@@ -64,7 +64,7 @@ serve(async (req: Request) => {
     const userResponse = await supabaseAdmin
       .from("users")
       .select("*")
-      .eq("phone_number", phoneNumber)
+      .eq("email", email)
       .single();
 
     if (userResponse.error || !userResponse.data) {

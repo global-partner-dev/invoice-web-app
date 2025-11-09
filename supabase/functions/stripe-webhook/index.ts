@@ -15,17 +15,17 @@ async function updateUserSubscription(event: Record<string, unknown>) {
     const object = data.object as Record<string, unknown>;
     const { customer, subscription, metadata } = object;
     const metadataObj = metadata as Record<string, unknown>;
-    const phoneNumber = metadataObj?.phoneNumber;
+    const email = metadataObj?.email;
 
-    if (!phoneNumber) {
-      console.error("No phone number in metadata");
+    if (!email) {
+      console.error("No email in metadata");
       return;
     }
 
-    console.log(`Processing subscription for phone: ${phoneNumber}, sub_id: ${subscription}`);
+    console.log(`Processing subscription for email: ${email}, sub_id: ${subscription}`);
 
     const userResponse = await fetch(
-      `${supabaseUrl}/rest/v1/users?phone_number=eq.${phoneNumber}`,
+      `${supabaseUrl}/rest/v1/users?email=eq.${email}`,
       {
         headers: {
           Authorization: `Bearer ${supabaseServiceRoleKey}`,
@@ -36,7 +36,7 @@ async function updateUserSubscription(event: Record<string, unknown>) {
 
     const user = userResponse[0];
     if (!user) {
-      console.error("User not found for phone number:", phoneNumber);
+      console.error("User not found for email:", email);
       return;
     }
 

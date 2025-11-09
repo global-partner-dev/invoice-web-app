@@ -10,7 +10,7 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 interface CheckoutRequest {
-  phoneNumber: string;
+  email: string;
   planId: string;
   productId: string;
 }
@@ -29,9 +29,9 @@ serve(async (req: Request) => {
 
   try {
     const body: CheckoutRequest = await req.json();
-    const { phoneNumber, productId } = body;
+    const { email, productId } = body;
 
-    if (!phoneNumber || !productId) {
+    if (!email || !productId) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -43,7 +43,7 @@ serve(async (req: Request) => {
 
     // Get or create Stripe customer
     const customers = await stripe.customers.list({
-      email: `${phoneNumber}@invoice-app.local`,
+      email: email,
       limit: 1,
     });
 
@@ -52,9 +52,9 @@ serve(async (req: Request) => {
       customerId = customers.data[0].id;
     } else {
       const customer = await stripe.customers.create({
-        email: `${phoneNumber}@invoice-app.local`,
+        email: email,
         metadata: {
-          phoneNumber,
+          email,
         },
       });
       customerId = customer.id;
@@ -113,7 +113,7 @@ serve(async (req: Request) => {
       success_url: `${frontendUrl}/dashboard/profile?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/subscribe`,
       metadata: {
-        phoneNumber,
+        email,
         productId,
       },
     });
