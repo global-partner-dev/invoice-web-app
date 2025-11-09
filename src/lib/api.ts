@@ -2,11 +2,28 @@ import { supabase } from "./supabase";
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL + "/functions/v1";
 
-// Auth API functions
-export async function loginWithPhoneNumber(phoneNumber: string) {
+export function validatePassword(password: string): { valid: boolean; error?: string } {
+  if (password.length < 8) {
+    return { valid: false, error: "Password must be at least 8 characters" };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, error: "Password must contain uppercase letter" };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: "Password must contain a number" };
+  }
+  if (!/[!@#$%^&*()_+=[\]{};':"\\|,.<>?-]/.test(password)) {
+    return { valid: false, error: "Password must contain a special character" };
+  }
+  return { valid: true };
+}
+
+// Auth API functions - Password based
+export async function loginWithPhoneAndPassword(phoneNumber: string, password: string) {
   try {
-    const { data, error } = await supabase.auth.signInWithOtp({
-      phone: phoneNumber,
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: `${phoneNumber}@invoice-app.local`,
+      password,
     });
 
     if (error) throw error;
@@ -17,18 +34,32 @@ export async function loginWithPhoneNumber(phoneNumber: string) {
   }
 }
 
-export async function verifyOTP(phoneNumber: string, token: string) {
+export async function signupWithPhoneAndPassword(
+  phoneNumber: string,
+  password: string,
+  fullName: string,
+  email: string
+) {
   try {
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: phoneNumber,
-      token,
-      type: "sms",
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          phone_number: phoneNumber,
+          full_name: fullName,
+        },
+      },
     });
 
-    if (error) throw error;
-    return { success: true, data };
+    if (authError) throw authError;
+    if (!authData.user) throw new Error("Signup failed");
+
+    await createUserProfile(phoneNumber, fullName, email);
+
+    return { success: true, data: authData };
   } catch (error) {
-    console.error("OTP verification error:", error);
+    console.error("Signup error:", error);
     throw error;
   }
 }

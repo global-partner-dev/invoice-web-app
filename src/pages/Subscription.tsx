@@ -1,33 +1,71 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, ArrowLeft } from "lucide-react";
+import { Phone, Lock, User, ArrowLeft, Mail } from "lucide-react";
 import { SubscriptionPlans } from "@/components/SubscriptionPlans";
 import { useToast } from "@/hooks/use-toast";
+import { signupWithPhoneAndPassword, validatePassword } from "@/lib/api";
 
 const Subscription = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [phoneNumber, setPhoneNumber] = useState(searchParams.get("number") || "");
-  const [isPhoneConfirmed, setIsPhoneConfirmed] = useState(false);
   const { toast } = useToast();
+  
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleConfirmPhone = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!phoneNumber) {
+    if (!phoneNumber || !fullName || !email || !password || !confirmPassword) {
       toast({
         title: "Error",
-        description: "Please enter a valid phone number",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       return;
     }
 
-    setIsPhoneConfirmed(true);
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      toast({
+        title: "Password Error",
+        description: passwordValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await signupWithPhoneAndPassword(phoneNumber, password, fullName, email);
+      setStep(2);
+    } catch (error) {
+      toast({
+        title: "Signup Error",
+        description: error instanceof Error ? error.message : "Failed to create account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -42,16 +80,50 @@ const Subscription = () => {
           Back to Login
         </Button>
 
-        {!isPhoneConfirmed ? (
+        {step === 1 ? (
           <Card className="w-full shadow-elegant">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-3xl font-bold text-center">Subscribe to a Plan</CardTitle>
+              <CardTitle className="text-3xl font-bold text-center">Create Account</CardTitle>
               <CardDescription className="text-center">
-                Enter your phone number to get started
+                Sign up to subscribe to a plan
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleConfirmPhone} className="space-y-4 max-w-md mx-auto">
+              <form onSubmit={handleSignup} className="space-y-4 max-w-md mx-auto">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="pl-10"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
@@ -63,14 +135,59 @@ const Subscription = () => {
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       className="pl-10"
+                      disabled={isLoading}
                       required
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Continue to Plans
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Min 8 chars, uppercase letter, number, special character
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Continue to Plans"}
                 </Button>
+
+                <div className="text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <a href="/login" className="text-primary hover:underline font-medium">
+                    Login here
+                  </a>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -79,7 +196,7 @@ const Subscription = () => {
             <CardHeader className="space-y-1">
               <CardTitle className="text-3xl font-bold text-center">Choose Your Plan</CardTitle>
               <CardDescription className="text-center">
-                Phone: {phoneNumber}
+                Welcome {fullName}! Select a subscription plan to get started
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-8">
@@ -89,11 +206,15 @@ const Subscription = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setIsPhoneConfirmed(false);
+                    setStep(1);
                     setPhoneNumber("");
+                    setFullName("");
+                    setEmail("");
+                    setPassword("");
+                    setConfirmPassword("");
                   }}
                 >
-                  Change Phone Number
+                  Back
                 </Button>
               </div>
             </CardContent>
