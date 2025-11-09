@@ -15,11 +15,11 @@ interface Plan {
 }
 
 interface SubscriptionPlansProps {
-  phoneNumber?: string;
+  email?: string;
   onClose?: () => void;
 }
 
-export function SubscriptionPlans({ phoneNumber, onClose }: SubscriptionPlansProps) {
+export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -46,10 +46,10 @@ export function SubscriptionPlans({ phoneNumber, onClose }: SubscriptionPlansPro
   }, [toast]);
 
   const handleSelectPlan = async (plan: Plan) => {
-    if (!phoneNumber) {
+    if (!email) {
       toast({
         title: "Error",
-        description: "Please enter your phone number first",
+        description: "Please enter your email first",
         variant: "destructive",
       });
       return;
@@ -60,13 +60,13 @@ export function SubscriptionPlans({ phoneNumber, onClose }: SubscriptionPlansPro
 
     try {
       const { sessionId, url } = await createCheckoutSession(
-        phoneNumber,
+        email,
         plan.id,
         plan.stripe_product_id
       );
 
       if (url) {
-        localStorage.setItem("checkout_phone_number", phoneNumber);
+        localStorage.setItem("checkout_email", email);
         window.location.href = url;
       } else {
         toast({

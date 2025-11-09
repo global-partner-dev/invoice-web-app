@@ -19,10 +19,10 @@ export function validatePassword(password: string): { valid: boolean; error?: st
 }
 
 // Auth API functions - Password based
-export async function loginWithPhoneAndPassword(phoneNumber: string, password: string) {
+export async function loginWithEmail(email: string, password: string) {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: `${phoneNumber}@invoice-app.local`,
+      email,
       password,
     });
 
@@ -34,11 +34,11 @@ export async function loginWithPhoneAndPassword(phoneNumber: string, password: s
   }
 }
 
-export async function signupWithPhoneAndPassword(
-  phoneNumber: string,
+export async function signupWithEmail(
+  email: string,
   password: string,
   fullName: string,
-  email: string
+  phoneNumber?: string
 ) {
   try {
     const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/signup`, {
@@ -48,10 +48,10 @@ export async function signupWithPhoneAndPassword(
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        phoneNumber,
+        email,
         password,
         fullName,
-        email,
+        phoneNumber,
       }),
     });
 
@@ -189,7 +189,7 @@ export async function getUserSubscription(userId: string) {
   }
 }
 
-export async function createCheckoutSession(phoneNumber: string, planId: string, productId: string) {
+export async function createCheckoutSession(email: string, planId: string, productId: string) {
   try {
     const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-checkout-session`, {
       method: "POST",
@@ -198,7 +198,7 @@ export async function createCheckoutSession(phoneNumber: string, planId: string,
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        phoneNumber,
+        email,
         planId,
         productId,
       }),
@@ -252,7 +252,7 @@ export async function cancelSubscription(subscriptionId: string) {
   }
 }
 
-export async function verifyAndUpdateSubscription(sessionId: string, phoneNumber: string) {
+export async function verifyAndUpdateSubscription(sessionId: string, email: string) {
   try {
     const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/verify-and-update-subscription`, {
       method: "POST",
@@ -262,7 +262,7 @@ export async function verifyAndUpdateSubscription(sessionId: string, phoneNumber
       },
       body: JSON.stringify({
         sessionId,
-        phoneNumber,
+        email,
       }),
     });
 

@@ -38,12 +38,12 @@ const Profile = () => {
       setVerificationStatus("pending");
 
       try {
-        const phoneNumber = localStorage.getItem("checkout_phone_number");
-        if (!phoneNumber) {
-          throw new Error("Phone number not found. Please complete checkout again.");
+        const email = localStorage.getItem("checkout_email");
+        if (!email) {
+          throw new Error("Email not found. Please complete checkout again.");
         }
 
-        const result = await verifyAndUpdateSubscription(sessionId, phoneNumber);
+        const result = await verifyAndUpdateSubscription(sessionId, email);
 
         setVerificationStatus("success");
         toast({
@@ -51,7 +51,7 @@ const Profile = () => {
           description: `You are now subscribed to the ${result.subscription.plan} plan.`,
         });
 
-        localStorage.removeItem("checkout_phone_number");
+        localStorage.removeItem("checkout_email");
         setSearchParams({}, { replace: true });
 
         setTimeout(() => {

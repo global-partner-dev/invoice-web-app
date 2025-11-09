@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { loginWithPhoneAndPassword } from "@/lib/api";
+import { loginWithEmail } from "@/lib/api";
 
 const Login = () => {
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -18,10 +18,10 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!phoneNumber || !password) {
+    if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please enter both phone number and password",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -29,7 +29,7 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      await loginWithPhoneAndPassword(phoneNumber, password);
+      await loginWithEmail(email, password);
       toast({
         title: "Login successful",
         description: "Redirecting to dashboard...",
@@ -52,21 +52,21 @@ const Login = () => {
         <CardHeader className="space-y-3 md:space-y-1">
           <CardTitle className="text-2xl md:text-3xl font-bold text-center">Welcome Back</CardTitle>
           <CardDescription className="text-sm md:text-base text-center">
-            Enter your phone number and password to access your account
+            Enter your email and password to access your account
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5 md:space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm md:text-base">Phone Number</Label>
+              <Label htmlFor="email" className="text-sm md:text-base">Email</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+52 722 101 5653"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 text-sm md:text-base"
                   disabled={isLoading}
                   required

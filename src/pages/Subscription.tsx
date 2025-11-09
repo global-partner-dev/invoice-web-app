@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Phone, Lock, User, ArrowLeft, Mail } from "lucide-react";
 import { SubscriptionPlans } from "@/components/SubscriptionPlans";
 import { useToast } from "@/hooks/use-toast";
-import { signupWithPhoneAndPassword, validatePassword, loginWithPhoneAndPassword } from "@/lib/api";
+import { signupWithEmail, validatePassword, loginWithEmail } from "@/lib/api";
 
 const Subscription = () => {
   const navigate = useNavigate();
@@ -42,10 +42,10 @@ const Subscription = () => {
       return;
     }
 
-    if (!phoneNumber || !fullName || !email || !password || !confirmPassword) {
+    if (!email || !fullName || !password || !confirmPassword) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -72,10 +72,10 @@ const Subscription = () => {
 
     setIsLoading(true);
     try {
-      await signupWithPhoneAndPassword(phoneNumber, password, fullName, email);
+      await signupWithEmail(email, password, fullName, phoneNumber);
       
       try {
-        await loginWithPhoneAndPassword(phoneNumber, password);
+        await loginWithEmail(email, password);
       } catch (loginError) {
         console.error("Auto-login failed after signup:", loginError);
       }
@@ -238,7 +238,7 @@ const Subscription = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6">
-              <SubscriptionPlans phoneNumber={phoneNumber} />
+              <SubscriptionPlans email={email} />
 
               <div className="mt-6 sm:mt-8 text-center">
                 <Button

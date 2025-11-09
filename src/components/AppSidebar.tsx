@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { logout } from "@/lib/api";
 
 interface AppSidebarProps {
   userRole: "admin" | "user";
@@ -33,8 +34,14 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
 
   const items = userRole === "admin" ? adminItems : userItems;
 
-  const handleLogout = () => {
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      navigate("/login");
+    }
   };
 
   return (
