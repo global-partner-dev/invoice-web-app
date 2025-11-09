@@ -89,14 +89,14 @@ export function SubscriptionPlans({ phoneNumber, onClose }: SubscriptionPlansPro
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-muted-foreground">Loading subscription plans...</p>
+      <div className="flex items-center justify-center py-8 sm:py-12">
+        <p className="text-sm sm:text-base text-muted-foreground">Loading subscription plans...</p>
       </div>
     );
   }
 
   return (
-    <div className="grid md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {plans.map((plan) => (
         <Card
           key={plan.id}
@@ -104,25 +104,25 @@ export function SubscriptionPlans({ phoneNumber, onClose }: SubscriptionPlansPro
             selectedPlan === plan.id ? "ring-2 ring-primary" : ""
           }`}
         >
-          <CardHeader>
-            <CardTitle>{plan.name}</CardTitle>
-            <CardDescription>{plan.description}</CardDescription>
+          <CardHeader className="px-4 sm:px-6 py-4">
+            <CardTitle className="text-lg sm:text-xl">{plan.name}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{plan.description}</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 space-y-6">
+          <CardContent className="flex-1 space-y-4 sm:space-y-6 px-4 sm:px-6">
             <div className="space-y-3">
-              <h4 className="font-semibold text-sm text-muted-foreground">Features</h4>
+              <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">Features</h4>
               <ul className="space-y-2">
                 {(plan.features || []).map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
+                    <span className="text-xs sm:text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             <Button
-              className="w-full"
+              className="w-full h-10 sm:h-11 text-sm sm:text-base"
               onClick={() => handleSelectPlan(plan)}
               disabled={isCheckingOut && selectedPlan === plan.id}
             >
