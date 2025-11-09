@@ -1,4 +1,5 @@
 import { User, Users, LogOut, Menu } from "lucide-react";
+import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { logout } from "@/lib/api";
 
 interface AppSidebarProps {
@@ -23,6 +25,8 @@ interface AppSidebarProps {
 export function AppSidebar({ userRole }: AppSidebarProps) {
   const { open } = useSidebar();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const userItems = [
     { title: "Profile", url: "/dashboard/profile", icon: User },
@@ -35,12 +39,25 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const items = userRole === "admin" ? adminItems : userItems;
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      setTimeout(() => {
+        navigate("/login");
+      }, 500);
     } catch (error) {
       console.error("Logout error:", error);
+      toast({
+        title: "Logout error",
+        description: error instanceof Error ? error.message : "Failed to logout",
+        variant: "destructive",
+      });
     } finally {
-      navigate("/login");
+      setIsLoggingOut(false);
     }
   };
 
@@ -86,9 +103,10 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
           variant="ghost"
           className="w-full justify-start"
           onClick={handleLogout}
+          disabled={isLoggingOut}
         >
           <LogOut className="h-4 w-4 mr-2" />
-          {open && <span>Logout</span>}
+          {open && <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>}
         </Button>
       </div>
     </Sidebar>
