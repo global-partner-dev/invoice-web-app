@@ -106,7 +106,7 @@ const Subscription = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 flex items-center justify-center">
       <div className="container mx-auto max-w-4xl">
         <Button
           variant="ghost"
