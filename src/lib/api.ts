@@ -278,3 +278,22 @@ export async function verifyAndUpdateSubscription(sessionId: string, email: stri
     throw error;
   }
 }
+
+export async function checkIfAdmin(email: string) {
+  try {
+    const { data, error } = await supabase
+      .from("admins")
+      .select("id, is_active")
+      .eq("email", email)
+      .eq("is_active", true)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw error;
+    }
+    return data ? true : false;
+  } catch (error) {
+    console.error("Check admin error:", error);
+    return false;
+  }
+}

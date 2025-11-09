@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getCurrentUser } from "@/lib/api";
+import { getCurrentUser, checkIfAdmin } from "@/lib/api";
 
 interface User {
   id: string;
@@ -11,6 +11,7 @@ interface User {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -19,6 +20,10 @@ export function useAuth() {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser || null);
+        if (currentUser?.email) {
+          const adminStatus = await checkIfAdmin(currentUser.email);
+          setIsAdmin(adminStatus);
+        }
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to get user"));
       } finally {
@@ -31,6 +36,12 @@ export function useAuth() {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setUser(session?.user || null);
+        if (session?.user?.email) {
+          const adminStatus = await checkIfAdmin(session.user.email);
+          setIsAdmin(adminStatus);
+        } else {
+          setIsAdmin(false);
+        }
         setLoading(false);
       }
     );
@@ -40,5 +51,5 @@ export function useAuth() {
     };
   }, []);
 
-  return { user, loading, error };
+  return { user, isAdmin, loading, error };
 }

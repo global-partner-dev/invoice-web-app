@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { loginWithEmail } from "@/lib/api";
+import { loginWithEmail, checkIfAdmin } from "@/lib/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -32,9 +32,15 @@ const Login = () => {
       await loginWithEmail(email, password);
       toast({
         title: "Login successful",
-        description: "Redirecting to dashboard...",
+        description: "Redirecting...",
       });
-      navigate("/dashboard/profile");
+      
+      const isAdmin = await checkIfAdmin(email);
+      if (isAdmin) {
+        navigate("/admin/users");
+      } else {
+        navigate("/dashboard/profile");
+      }
     } catch (error) {
       toast({
         title: "Error",
