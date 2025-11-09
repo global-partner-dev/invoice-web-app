@@ -24,13 +24,28 @@ export function useAuth() {
     const checkAdminStatus = async (email: string) => {
       try {
         const adminStatus = await checkIfAdmin(email);
+        console.log("useAuth: checkAdminStatus completed:", { email, adminStatus });
         if (isMounted) {
           setIsAdmin(adminStatus);
+          
+          // Mark loading as complete AFTER admin check finishes
+          if (!authInitialized.current) {
+            authInitialized.current = true;
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+          }
         }
       } catch (err) {
         console.error("Failed to check admin status:", err);
         if (isMounted) {
           setIsAdmin(false);
+          
+          // Mark loading as complete even if check fails
+          if (!authInitialized.current) {
+            authInitialized.current = true;
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+          }
         }
       }
     };
@@ -42,17 +57,19 @@ export function useAuth() {
       const currentUser = sess?.user;
 
       setUser((currentUser as User) || null);
+      console.log("useAuth: Auth state changed, user:", currentUser?.email);
 
       if (currentUser?.email) {
         checkAdminStatus(currentUser.email);
       } else {
         setIsAdmin(false);
-      }
-
-      if (!authInitialized.current) {
-        authInitialized.current = true;
-        setLoading(false);
-        clearTimeout(loadingTimeout);
+        // Mark loading complete if no user
+        if (!authInitialized.current) {
+          authInitialized.current = true;
+          console.log("useAuth: No user, setting loading to false");
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+        }
       }
     };
 
