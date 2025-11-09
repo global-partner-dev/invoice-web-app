@@ -41,23 +41,27 @@ export async function signupWithPhoneAndPassword(
   email: string
 ) {
   try {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          phone_number: phoneNumber,
-          full_name: fullName,
-        },
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
+      body: JSON.stringify({
+        phoneNumber,
+        password,
+        fullName,
+        email,
+      }),
     });
 
-    if (authError) throw authError;
-    if (!authData.user) throw new Error("Signup failed");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create account");
+    }
 
-    await createUserProfile(phoneNumber, fullName, email);
-
-    return { success: true, data: authData };
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error("Signup error:", error);
     throw error;
@@ -103,9 +107,14 @@ export async function getUserProfile(userId: string) {
   }
 }
 
-export async function createUserProfile(phoneNumber: string, fullName?: string, email?: string) {
+export async function createUserProfile(phoneNumber: string, fullName?: string, email?: string, userId?: string) {
   try {
-    const user = await getCurrentUser();
+    let user;
+    if (userId) {
+      user = { id: userId };
+    } else {
+      user = await getCurrentUser();
+    }
     if (!user) throw new Error("No authenticated user");
 
     const { data, error } = await supabase

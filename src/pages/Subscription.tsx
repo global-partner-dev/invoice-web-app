@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ const Subscription = () => {
   
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   
   const [phoneNumber, setPhoneNumber] = useState("");
   const [fullName, setFullName] = useState("");
@@ -22,8 +23,24 @@ const Subscription = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  useEffect(() => {
+    if (cooldownSeconds > 0) {
+      const timer = setTimeout(() => setCooldownSeconds(cooldownSeconds - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldownSeconds]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (cooldownSeconds > 0) {
+      toast({
+        title: "Please wait",
+        description: `Try again in ${cooldownSeconds} seconds`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!phoneNumber || !fullName || !email || !password || !confirmPassword) {
       toast({
@@ -58,11 +75,24 @@ const Subscription = () => {
       await signupWithPhoneAndPassword(phoneNumber, password, fullName, email);
       setStep(2);
     } catch (error) {
-      toast({
-        title: "Signup Error",
-        description: error instanceof Error ? error.message : "Failed to create account",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Failed to create account";
+      
+      if (errorMessage.includes("only request this after")) {
+        const match = errorMessage.match(/after (\d+) seconds/);
+        const seconds = match ? parseInt(match[1]) : 60;
+        setCooldownSeconds(seconds);
+        toast({
+          title: "Too many attempts",
+          description: `Please wait ${seconds} seconds before trying again`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Signup Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -178,8 +208,8 @@ const Subscription = () => {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating Account..." : "Continue to Plans"}
+                <Button type="submit" className="w-full" disabled={isLoading || cooldownSeconds > 0}>
+                  {isLoading ? "Creating Account..." : cooldownSeconds > 0 ? `Wait ${cooldownSeconds}s` : "Continue to Plans"}
                 </Button>
 
                 <div className="text-center text-sm text-muted-foreground">
