@@ -66,6 +66,7 @@ export function SubscriptionPlans({ phoneNumber, onClose }: SubscriptionPlansPro
       );
 
       if (url) {
+        localStorage.setItem("checkout_phone_number", phoneNumber);
         window.location.href = url;
       } else {
         toast({

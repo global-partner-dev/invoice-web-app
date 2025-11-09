@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Phone, Lock, User, ArrowLeft, Mail } from "lucide-react";
 import { SubscriptionPlans } from "@/components/SubscriptionPlans";
 import { useToast } from "@/hooks/use-toast";
-import { signupWithPhoneAndPassword, validatePassword } from "@/lib/api";
+import { signupWithPhoneAndPassword, validatePassword, loginWithPhoneAndPassword } from "@/lib/api";
 
 const Subscription = () => {
   const navigate = useNavigate();
@@ -73,6 +73,13 @@ const Subscription = () => {
     setIsLoading(true);
     try {
       await signupWithPhoneAndPassword(phoneNumber, password, fullName, email);
+      
+      try {
+        await loginWithPhoneAndPassword(phoneNumber, password);
+      } catch (loginError) {
+        console.error("Auto-login failed after signup:", loginError);
+      }
+      
       setStep(2);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create account";

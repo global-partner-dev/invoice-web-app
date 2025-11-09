@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Save, AlertCircle, CheckCircle } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentUser } from "@/lib/api";
 import { verifyAndUpdateSubscription } from "@/lib/api";
 
 const Profile = () => {
@@ -39,14 +38,9 @@ const Profile = () => {
       setVerificationStatus("pending");
 
       try {
-        const user = await getCurrentUser();
-        if (!user) {
-          throw new Error("User not authenticated");
-        }
-
-        const phoneNumber = user.user_metadata?.phone_number;
+        const phoneNumber = localStorage.getItem("checkout_phone_number");
         if (!phoneNumber) {
-          throw new Error("Phone number not found in user metadata");
+          throw new Error("Phone number not found. Please complete checkout again.");
         }
 
         const result = await verifyAndUpdateSubscription(sessionId, phoneNumber);
@@ -57,6 +51,7 @@ const Profile = () => {
           description: `You are now subscribed to the ${result.subscription.plan} plan.`,
         });
 
+        localStorage.removeItem("checkout_phone_number");
         setSearchParams({}, { replace: true });
 
         setTimeout(() => {
