@@ -297,3 +297,18 @@ export async function checkIfAdmin(email: string) {
     return false;
   }
 }
+
+export async function getAllUsers() {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, full_name, email, phone_number, created_at, updated_at")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Get all users error:", error);
+    throw error;
+  }
+}

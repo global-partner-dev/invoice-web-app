@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,54 +12,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, UserPlus, Edit, Trash2 } from "lucide-react";
+import { Search, UserPlus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { getAllUsers } from "@/lib/api";
 
 interface User {
   id: string;
-  phoneNumber: string;
-  name: string;
-  email: string;
-  status: "active" | "inactive" | "pending";
-  createdAt: string;
+  phone_number: string | null;
+  full_name: string | null;
+  email: string | null;
+  status?: "active" | "inactive" | "pending";
+  created_at: string;
 }
-
-const mockUsers: User[] = [
-  {
-    id: "1",
-    phoneNumber: "+52 722 101 5653",
-    name: "Juan Pérez",
-    email: "juan@example.com",
-    status: "active",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    phoneNumber: "+52 722 101 5654",
-    name: "María García",
-    email: "maria@example.com",
-    status: "active",
-    createdAt: "2024-01-20",
-  },
-  {
-    id: "3",
-    phoneNumber: "+52 722 101 5655",
-    name: "Carlos López",
-    email: "carlos@example.com",
-    status: "pending",
-    createdAt: "2024-02-01",
-  },
-];
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [users] = useState<User[]>(mockUsers);
+  const { data: users = [], isLoading, error } = useQuery({
+    queryKey: ["users"],
+    queryFn: getAllUsers,
+  });
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.phoneNumber.includes(searchQuery)
+      (user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+      (user.email?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+      (user.phone_number?.includes(searchQuery) || false)
   );
 
   const getStatusColor = (status: User["status"]) => {
@@ -72,6 +50,14 @@ const Users = () => {
       default:
         return "bg-muted";
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -98,6 +84,13 @@ const Users = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-lg flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <p className="text-red-700">Failed to load users. Please try again later.</p>
+              </div>
+            )}
+
             <div className="mb-6">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -106,6 +99,7 @@ const Users = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -123,18 +117,27 @@ const Users = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.length > 0 ? (
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        <div className="flex justify-center items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-muted-foreground">Loading users...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.phoneNumber}</TableCell>
+                        <TableCell className="font-medium">{user.full_name || "—"}</TableCell>
+                        <TableCell>{user.email || "—"}</TableCell>
+                        <TableCell>{user.phone_number || "—"}</TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(user.status)}>
-                            {user.status}
+                          <Badge className={getStatusColor(user.status || "active")}>
+                            {user.status || "active"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{user.createdAt}</TableCell>
+                        <TableCell>{formatDate(user.created_at)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="icon">
@@ -150,7 +153,7 @@ const Users = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No users found
+                        {searchQuery ? "No users match your search" : "No users found"}
                       </TableCell>
                     </TableRow>
                   )}
