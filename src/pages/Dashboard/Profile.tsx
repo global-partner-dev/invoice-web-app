@@ -104,40 +104,40 @@ const Profile = () => {
 
   return (
     <DashboardLayout userRole="user">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6">Profile Management</h1>
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6">Profile Management</h1>
 
         {isVerifying && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
-            <CardContent className="pt-6 flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-              <p className="text-blue-700">Verifying your subscription payment...</p>
+          <Card className="mb-4 sm:mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 flex-shrink-0"></div>
+              <p className="text-blue-700 text-sm sm:text-base text-center sm:text-left">Verifying your subscription payment...</p>
             </CardContent>
           </Card>
         )}
 
         {verificationStatus === "success" && (
-          <Card className="mb-6 border-green-200 bg-green-50">
-            <CardContent className="pt-6 flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <p className="text-green-700">Your subscription has been activated successfully!</p>
+          <Card className="mb-4 sm:mb-6 border-green-200 bg-green-50">
+            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <p className="text-green-700 text-sm sm:text-base text-center sm:text-left">Your subscription has been activated successfully!</p>
             </CardContent>
           </Card>
         )}
 
         {verificationStatus === "error" && (
-          <Card className="mb-6 border-red-200 bg-red-50">
-            <CardContent className="pt-6 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-red-700">Failed to verify subscription. Please contact support if the issue persists.</p>
+          <Card className="mb-4 sm:mb-6 border-red-200 bg-red-50">
+            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              <p className="text-red-700 text-sm sm:text-base text-center sm:text-left">Failed to verify subscription. Please contact support if the issue persists.</p>
             </CardContent>
           </Card>
         )}
         
-        <Tabs defaultValue="details" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">Profile Details</TabsTrigger>
-            <TabsTrigger value="upload">Upload Documents</TabsTrigger>
+        <Tabs defaultValue="details" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 gap-2">
+            <TabsTrigger value="details" className="text-xs sm:text-sm">Profile Details</TabsTrigger>
+            <TabsTrigger value="upload" className="text-xs sm:text-sm">Upload Documents</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details">
@@ -148,9 +148,9 @@ const Profile = () => {
                   Complete your profile to start generating invoices
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSave} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+              <CardContent className="px-4 sm:px-6">
+                <form onSubmit={handleSave} className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="issuer_id">Issuer ID</Label>
                       <Input
@@ -254,7 +254,7 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
                     <Save className="mr-2 h-4 w-4" />
                     {isLoading ? "Saving..." : "Save Profile"}
                   </Button>
@@ -271,14 +271,14 @@ const Profile = () => {
                   Upload images or PDFs to auto-fill invoice information
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary transition-colors">
-                  <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="text-primary font-medium">Click to upload</span>
-                    {" "}or drag and drop
+              <CardContent className="px-4 sm:px-6 space-y-4 sm:space-y-6">
+                <div className="border-2 border-dashed border-border rounded-lg p-6 sm:p-8 lg:p-12 text-center hover:border-primary transition-colors">
+                  <Upload className="h-8 sm:h-10 lg:h-12 w-8 sm:w-10 lg:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                  <Label htmlFor="file-upload" className="cursor-pointer block">
+                    <span className="text-primary font-medium text-sm sm:text-base">Click to upload</span>
+                    <span className="text-xs sm:text-sm"> or drag and drop</span>
                   </Label>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                     PDF, PNG, JPG up to 10MB
                   </p>
                   <Input
@@ -290,9 +290,9 @@ const Profile = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-medium">Supported Documents</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="font-medium text-sm sm:text-base">Supported Documents</h3>
+                  <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
                     <li>• Tax receipts and invoices</li>
                     <li>• Business registration documents</li>
                     <li>• Expense reports</li>
