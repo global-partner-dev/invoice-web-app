@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Save } from "lucide-react";
+import { Upload, Save, AlertCircle, CheckCircle } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
+import { getCurrentUser } from "@/lib/api";
+import { verifyAndUpdateSubscription } from "@/lib/api";
 
 const Profile = () => {
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<"pending" | "success" | "error" | null>(null);
   const [profileData, setProfileData] = useState({
     issuer_id: "",
     issuer_rfc: "",
@@ -23,6 +29,54 @@ const Profile = () => {
     issuer_password: "",
     issuer_csf_status: "",
   });
+
+  useEffect(() => {
+    const verifyPayment = async () => {
+      const sessionId = searchParams.get("session_id");
+      if (!sessionId) return;
+
+      setIsVerifying(true);
+      setVerificationStatus("pending");
+
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          throw new Error("User not authenticated");
+        }
+
+        const phoneNumber = user.user_metadata?.phone_number;
+        if (!phoneNumber) {
+          throw new Error("Phone number not found in user metadata");
+        }
+
+        const result = await verifyAndUpdateSubscription(sessionId, phoneNumber);
+
+        setVerificationStatus("success");
+        toast({
+          title: "Subscription activated!",
+          description: `You are now subscribed to the ${result.subscription.plan} plan.`,
+        });
+
+        setSearchParams({}, { replace: true });
+
+        setTimeout(() => {
+          setVerificationStatus(null);
+        }, 3000);
+      } catch (error) {
+        console.error("Payment verification error:", error);
+        setVerificationStatus("error");
+        toast({
+          title: "Verification failed",
+          description: error instanceof Error ? error.message : "Failed to verify your subscription",
+          variant: "destructive",
+        });
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    verifyPayment();
+  }, [searchParams, setSearchParams, toast]);
 
   const handleInputChange = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
@@ -57,6 +111,33 @@ const Profile = () => {
     <DashboardLayout userRole="user">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold mb-6">Profile Management</h1>
+
+        {isVerifying && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="pt-6 flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+              <p className="text-blue-700">Verifying your subscription payment...</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {verificationStatus === "success" && (
+          <Card className="mb-6 border-green-200 bg-green-50">
+            <CardContent className="pt-6 flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-green-700">Your subscription has been activated successfully!</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {verificationStatus === "error" && (
+          <Card className="mb-6 border-red-200 bg-red-50">
+            <CardContent className="pt-6 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-red-700">Failed to verify subscription. Please contact support if the issue persists.</p>
+            </CardContent>
+          </Card>
+        )}
         
         <Tabs defaultValue="details" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">

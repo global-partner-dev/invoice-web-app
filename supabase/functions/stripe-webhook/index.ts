@@ -10,114 +10,139 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 async function updateUserSubscription(event: Record<string, unknown>) {
-  const data = event.data as Record<string, unknown>;
-  const object = data.object as Record<string, unknown>;
-  const { customer, subscription, metadata } = object;
-  const metadataObj = metadata as Record<string, unknown>;
-  const phoneNumber = metadataObj?.phoneNumber;
+  try {
+    const data = event.data as Record<string, unknown>;
+    const object = data.object as Record<string, unknown>;
+    const { customer, subscription, metadata } = object;
+    const metadataObj = metadata as Record<string, unknown>;
+    const phoneNumber = metadataObj?.phoneNumber;
 
-  if (!phoneNumber) {
-    console.error("No phone number in metadata");
-    return;
-  }
-
-  // Get user by phone number
-  const userResponse = await fetch(
-    `${supabaseUrl}/rest/v1/users?phone_number=eq.${phoneNumber}`,
-    {
-      headers: {
-        Authorization: `Bearer ${supabaseServiceRoleKey}`,
-        apikey: supabaseServiceRoleKey || "",
-      },
+    if (!phoneNumber) {
+      console.error("No phone number in metadata");
+      return;
     }
-  ).then((r) => r.json());
 
-  const user = userResponse[0];
-  if (!user) {
-    console.error("User not found for phone number:", phoneNumber);
-    return;
-  }
+    console.log(`Processing subscription for phone: ${phoneNumber}, sub_id: ${subscription}`);
 
-  // Get subscription plan by Stripe product ID
-  const productId = event.data.object.items?.data[0]?.price?.product;
-  const planResponse = await fetch(
-    `${supabaseUrl}/rest/v1/subscription_plans?stripe_product_id=eq.${productId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${supabaseServiceRoleKey}`,
-        apikey: supabaseServiceRoleKey || "",
-      },
+    const userResponse = await fetch(
+      `${supabaseUrl}/rest/v1/users?phone_number=eq.${phoneNumber}`,
+      {
+        headers: {
+          Authorization: `Bearer ${supabaseServiceRoleKey}`,
+          apikey: supabaseServiceRoleKey || "",
+        },
+      }
+    ).then((r) => r.json());
+
+    const user = userResponse[0];
+    if (!user) {
+      console.error("User not found for phone number:", phoneNumber);
+      return;
     }
-  ).then((r) => r.json());
 
-  const plan = planResponse[0];
-  if (!plan) {
-    console.error("Plan not found for product:", productId);
-    return;
-  }
+    console.log(`Found user: ${user.id}`);
 
-  // Update or create subscription
-  const subscriptionData = {
-    user_id: user.id,
-    plan_id: plan.id,
-    stripe_customer_id: customer,
-    stripe_subscription_id: subscription,
-    status: event.data.object.status,
-    current_period_start: new Date(event.data.object.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(event.data.object.current_period_end * 1000).toISOString(),
-  };
-
-  // Upsert subscription
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/subscriptions?stripe_subscription_id=eq.${subscription}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${supabaseServiceRoleKey}`,
-        apikey: supabaseServiceRoleKey || "",
-      },
+    const productId = object.items && (object.items as Array<Record<string, unknown>>)[0]?.price?.product;
+    
+    if (!productId) {
+      console.error("No product ID found in subscription items");
+      return;
     }
-  ).then((r) => r.json());
 
-  if (response.length > 0) {
-    // Update existing subscription
-    await fetch(
+    const planResponse = await fetch(
+      `${supabaseUrl}/rest/v1/subscription_plans?stripe_product_id=eq.${productId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${supabaseServiceRoleKey}`,
+          apikey: supabaseServiceRoleKey || "",
+        },
+      }
+    ).then((r) => r.json());
+
+    const plan = planResponse[0];
+    if (!plan) {
+      console.error("Plan not found for product:", productId);
+      return;
+    }
+
+    console.log(`Found plan: ${plan.id}`);
+
+    const subscriptionData = {
+      user_id: user.id,
+      plan_id: plan.id,
+      stripe_customer_id: customer,
+      stripe_subscription_id: subscription,
+      status: object.status,
+      current_period_start: new Date((object.current_period_start as number) * 1000).toISOString(),
+      current_period_end: new Date((object.current_period_end as number) * 1000).toISOString(),
+      cancel_at_period_end: object.cancel_at_period_end as boolean || false,
+    };
+
+    const existingResponse = await fetch(
       `${supabaseUrl}/rest/v1/subscriptions?stripe_subscription_id=eq.${subscription}`,
       {
-        method: "PATCH",
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${supabaseServiceRoleKey}`,
+          apikey: supabaseServiceRoleKey || "",
+        },
+      }
+    ).then((r) => r.json());
+
+    let subscriptionId: string;
+
+    if (existingResponse.length > 0) {
+      console.log(`Updating existing subscription: ${existingResponse[0].id}`);
+      const updateResult = await fetch(
+        `${supabaseUrl}/rest/v1/subscriptions?stripe_subscription_id=eq.${subscription}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseServiceRoleKey}`,
+            apikey: supabaseServiceRoleKey || "",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify(subscriptionData),
+        }
+      ).then((r) => r.json());
+
+      subscriptionId = existingResponse[0].id;
+      console.log(`Subscription updated: ${subscriptionId}`);
+    } else {
+      console.log(`Creating new subscription`);
+      const insertResult = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${supabaseServiceRoleKey}`,
           apikey: supabaseServiceRoleKey || "",
+          Prefer: "return=representation",
         },
         body: JSON.stringify(subscriptionData),
-      }
-    );
-  } else {
-    // Insert new subscription
-    await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
-      method: "POST",
+      }).then((r) => r.json());
+
+      subscriptionId = insertResult[0]?.id;
+      console.log(`Subscription created: ${subscriptionId}`);
+    }
+
+    const updateUserResult = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${supabaseServiceRoleKey}`,
         apikey: supabaseServiceRoleKey || "",
       },
-      body: JSON.stringify(subscriptionData),
-    });
-  }
+      body: JSON.stringify({
+        subscription_id: subscriptionId,
+      }),
+    }).then((r) => r.json());
 
-  // Update user's subscription_id
-  await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${supabaseServiceRoleKey}`,
-      apikey: supabaseServiceRoleKey || "",
-    },
-    body: JSON.stringify({
-      subscription_id: response[0]?.id || subscriptionData.id,
-    }),
-  });
+    console.log(`User ${user.id} subscription_id updated to ${subscriptionId}`);
+  } catch (error) {
+    console.error("updateUserSubscription error:", error);
+    throw error;
+  }
 }
 
 serve(async (req: Request) => {

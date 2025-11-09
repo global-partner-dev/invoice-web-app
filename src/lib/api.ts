@@ -251,3 +251,30 @@ export async function cancelSubscription(subscriptionId: string) {
     throw error;
   }
 }
+
+export async function verifyAndUpdateSubscription(sessionId: string, phoneNumber: string) {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/verify-and-update-subscription`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        sessionId,
+        phoneNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to verify subscription");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Verify subscription error:", error);
+    throw error;
+  }
+}
