@@ -91,16 +91,61 @@ serve(async (req: Request) => {
     });
 
     const customerSession = customerSessions.data[0];
-    if (!customerSession?.subscription) {
+    if (!customerSession) {
       return new Response(
-        JSON.stringify({ error: "No subscription created for this payment" }),
+        JSON.stringify({ error: "No checkout session found for customer" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const subscription = await stripe.subscriptions.retrieve(customerSession.subscription as string);
+    console.log(`Session object keys: ${Object.keys(customerSession).join(", ")}`);
+    console.log(`Session.subscription: ${customerSession.subscription}`);
+    console.log(`Session.payment_status: ${customerSession.payment_status}`);
 
-    const productId = subscription.items.data[0]?.price.product as string;
+    let subscription: Record<string, unknown>;
+    let productId: string;
+
+    if (customerSession.subscription) {
+      console.log(`Payment is a subscription: ${customerSession.subscription}`);
+      subscription = await stripe.subscriptions.retrieve(customerSession.subscription as string);
+      productId = (subscription.items as Record<string, unknown>).data[0]?.price?.product as string;
+    } else {
+      console.log(`Payment is one-time, fetching line items for session ${sessionId}`);
+      const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
+      console.log(`Line items count: ${lineItems.data.length}`);
+      
+      if (lineItems.data.length === 0) {
+        console.error(`No line items found for session ${sessionId}`);
+        return new Response(
+          JSON.stringify({ error: "No line items found in checkout session" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const lineItem = lineItems.data[0];
+      console.log(`Line item: ${JSON.stringify(lineItem)}`);
+
+      if (!lineItem?.price?.product) {
+        console.error(`No price or product found in line item`);
+        return new Response(
+          JSON.stringify({ error: "Could not find product information from payment" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      productId = lineItem.price.product as string;
+      console.log(`Found product from line items: ${productId}`);
+
+      subscription = {
+        id: `one_time_${sessionId}`,
+        status: "active",
+        current_period_start: Math.floor(Date.now() / 1000),
+        current_period_end: Math.floor(Date.now() / 1000) + 86400 * 365,
+        cancel_at_period_end: false,
+      };
+
+      console.log(`Created synthetic subscription for one-time payment, product: ${productId}`);
+    }
 
     const planResponse = await supabaseAdmin
       .from("subscription_plans")
@@ -118,30 +163,32 @@ serve(async (req: Request) => {
 
     const plan = planResponse.data;
 
+    const stripeSubscriptionId = customerSession.subscription || `one_time_${sessionId}`;
+
     const subscriptionData = {
       user_id: user.id,
       plan_id: plan.id,
       stripe_customer_id: stripeCustomerId,
-      stripe_subscription_id: subscription.id,
-      status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
+      stripe_subscription_id: stripeSubscriptionId,
+      status: (subscription.status as string) || "active",
+      current_period_start: new Date((subscription.current_period_start as number) * 1000).toISOString(),
+      current_period_end: new Date((subscription.current_period_end as number) * 1000).toISOString(),
+      cancel_at_period_end: (subscription.cancel_at_period_end as boolean) || false,
     };
 
     const existingSubscriptionResponse = await supabaseAdmin
       .from("subscriptions")
       .select("*")
-      .eq("stripe_subscription_id", subscription.id)
-      .single();
+      .eq("stripe_subscription_id", stripeSubscriptionId);
 
     let subscriptionId: string;
 
-    if (existingSubscriptionResponse.data) {
+    if (existingSubscriptionResponse.data && existingSubscriptionResponse.data.length > 0) {
+      const existingSub = existingSubscriptionResponse.data[0];
       const updateResponse = await supabaseAdmin
         .from("subscriptions")
         .update(subscriptionData)
-        .eq("id", existingSubscriptionResponse.data.id)
+        .eq("id", existingSub.id)
         .select()
         .single();
 
@@ -149,7 +196,7 @@ serve(async (req: Request) => {
         console.error("Subscription update error:", updateResponse.error);
         throw updateResponse.error;
       }
-      subscriptionId = updateResponse.data.id;
+      subscriptionId = existingSub.id;
     } else {
       const insertResponse = await supabaseAdmin
         .from("subscriptions")

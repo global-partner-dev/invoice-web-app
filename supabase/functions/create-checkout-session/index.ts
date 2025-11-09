@@ -60,29 +60,47 @@ serve(async (req: Request) => {
       customerId = customer.id;
     }
 
-    // Get price for the product
-    const prices = await stripe.prices.list({
+    let recurringPrices = await stripe.prices.list({
       product: productId,
       active: true,
-      type: "one_time",
+      type: "recurring",
       limit: 1,
     });
 
-    if (prices.data.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No active price found for product" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+    let mode: "subscription" | "payment" = "subscription";
+    let priceId: string;
 
-    const priceId = prices.data[0].id;
+    if (recurringPrices.data.length > 0) {
+      priceId = recurringPrices.data[0].id;
+      console.log(`Using recurring price: ${priceId}`);
+    } else {
+      console.log(`No recurring price found, trying one-time price for product ${productId}`);
+      const oneTimePrices = await stripe.prices.list({
+        product: productId,
+        active: true,
+        type: "one_time",
+        limit: 1,
+      });
+
+      if (oneTimePrices.data.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            error: "No active price found for product. Please set up a recurring or one-time price in Stripe." 
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      priceId = oneTimePrices.data[0].id;
+      mode = "payment";
+      console.log(`Using one-time price: ${priceId}`);
+    }
 
     const frontendUrl = Deno.env.get("FRONTEND_URL") || "http://localhost:8080";
 
-    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
@@ -91,7 +109,7 @@ serve(async (req: Request) => {
           quantity: 1,
         },
       ],
-      mode: "payment",
+      mode: mode,
       success_url: `${frontendUrl}/dashboard/profile?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/subscribe`,
       metadata: {
