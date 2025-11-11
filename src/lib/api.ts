@@ -136,6 +136,65 @@ export async function createUserProfile(phoneNumber: string, fullName?: string, 
   }
 }
 
+export interface TaxProfile {
+  id: string;
+  user_id: string;
+  rfc: string | null;
+  tax_regime: string | null;
+  first_name: string | null;
+  first_surname: string | null;
+  second_surname: string | null;
+  postal_code: string | null;
+  curp: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpsertTaxProfilePayload {
+  rfc: string | null;
+  tax_regime: string | null;
+  first_name: string | null;
+  first_surname: string | null;
+  second_surname: string | null;
+  postal_code: string | null;
+  curp: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+}
+
+export async function getUserTaxProfile(userId: string) {
+  const { data, error } = await supabase
+    .from("tax_profiles")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
+    throw error;
+  }
+  return data as TaxProfile;
+}
+
+export async function upsertUserTaxProfile(userId: string, payload: UpsertTaxProfilePayload) {
+  const { data, error } = await supabase
+    .from("tax_profiles")
+    .upsert({ user_id: userId, ...payload }, { onConflict: "user_id" })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data as TaxProfile;
+}
+
 export async function updateUserProfile(userId: string, updates: Record<string, unknown>) {
   try {
     const { data, error } = await supabase

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { getUserTaxProfile, upsertUserTaxProfile } from "@/lib/api";
 
 interface ProfileData {
   required: {
@@ -31,11 +33,13 @@ const InputField = ({
   value,
   onChange,
   placeholder,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) => (
   <div className="space-y-1">
     <Label className="text-sm">{label}</Label>
@@ -44,13 +48,16 @@ const InputField = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? ""}
       className="h-9"
+      disabled={disabled}
     />
   </div>
 );
 
 const Profile = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData>({
     required: {
       rfc: "",
@@ -68,6 +75,68 @@ const Profile = () => {
     },
   });
 
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : "An unexpected error occurred.";
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      if (!user?.id) {
+        if (active) {
+          setIsFetching(false);
+        }
+        return;
+      }
+
+      setIsFetching(true);
+      try {
+        const data = await getUserTaxProfile(user.id);
+        if (data && active) {
+          setProfileData({
+            required: {
+              rfc: data.rfc ?? "",
+              nombre: data.first_name ?? "",
+              primerApellido: data.first_surname ?? "",
+              segundoApellido: data.second_surname ?? "",
+              regimen: data.tax_regime ?? "",
+              codigoPostal: data.postal_code ?? "",
+            },
+            optional: {
+              curp: data.curp ?? "",
+              email: data.email ?? "",
+              phone: data.phone ?? "",
+              address: data.address ?? "",
+            },
+          });
+        }
+      } catch (error) {
+        if (active) {
+          toast({
+            title: "Failed to load profile",
+            description: getErrorMessage(error),
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (active) {
+          setIsFetching(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id, toast]);
+
+  const toNullable = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  };
+
   const handleInputChange = (path: string, value: string) => {
     const keys = path.split(".");
     setProfileData(prev => {
@@ -83,15 +152,62 @@ const Profile = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) {
+      toast({
+        title: "Failed to save profile",
+        description: "You must be signed in to update your profile.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const trimmedData: ProfileData = {
+      required: {
+        rfc: profileData.required.rfc.trim(),
+        nombre: profileData.required.nombre.trim(),
+        primerApellido: profileData.required.primerApellido.trim(),
+        segundoApellido: profileData.required.segundoApellido.trim(),
+        regimen: profileData.required.regimen.trim(),
+        codigoPostal: profileData.required.codigoPostal.trim(),
+      },
+      optional: {
+        curp: profileData.optional.curp.trim(),
+        email: profileData.optional.email.trim(),
+        phone: profileData.optional.phone.trim(),
+        address: profileData.optional.address.trim(),
+      },
+    };
+
+    setProfileData(trimmedData);
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await upsertUserTaxProfile(user.id, {
+        rfc: toNullable(trimmedData.required.rfc),
+        tax_regime: toNullable(trimmedData.required.regimen),
+        first_name: toNullable(trimmedData.required.nombre),
+        first_surname: toNullable(trimmedData.required.primerApellido),
+        second_surname: toNullable(trimmedData.required.segundoApellido),
+        postal_code: toNullable(trimmedData.required.codigoPostal),
+        curp: toNullable(trimmedData.optional.curp),
+        email: toNullable(trimmedData.optional.email),
+        phone: toNullable(trimmedData.optional.phone),
+        address: toNullable(trimmedData.optional.address),
+      });
+
       toast({
         title: "Profile saved",
         description: "Your profile information has been updated successfully.",
       });
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Failed to save profile",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const placeholders: Record<string, string> = {
@@ -106,6 +222,8 @@ const Profile = () => {
     phone: "e.g. 55-57578026",
     address: "e.g. Calle Norte 72-B #7812, Colonia Salvador Díaz Mirón...",
   };
+
+  const isFormDisabled = isLoading || isFetching;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -141,36 +259,42 @@ const Profile = () => {
                       value={profileData.required.rfc}
                       onChange={(value) => handleInputChange("required.rfc", value)}
                       placeholder={placeholders.rfc}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="Tax Regime"
                       value={profileData.required.regimen}
                       onChange={(value) => handleInputChange("required.regimen", value)}
                       placeholder={placeholders.regimen}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="Name"
                       value={profileData.required.nombre}
                       onChange={(value) => handleInputChange("required.nombre", value)}
                       placeholder={placeholders.nombre}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="First Surname"
                       value={profileData.required.primerApellido}
                       onChange={(value) => handleInputChange("required.primerApellido", value)}
                       placeholder={placeholders.primerApellido}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="Second Surname"
                       value={profileData.required.segundoApellido}
                       onChange={(value) => handleInputChange("required.segundoApellido", value)}
                       placeholder={placeholders.segundoApellido}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="Postal Code"
                       value={profileData.required.codigoPostal}
                       onChange={(value) => handleInputChange("required.codigoPostal", value)}
                       placeholder={placeholders.codigoPostal}
+                      disabled={isFormDisabled}
                     />
                   </div>
                 </CardContent>
@@ -187,18 +311,21 @@ const Profile = () => {
                       value={profileData.optional.curp}
                       onChange={(value) => handleInputChange("optional.curp", value)}
                       placeholder={placeholders.curp}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="Email"
                       value={profileData.optional.email}
                       onChange={(value) => handleInputChange("optional.email", value)}
                       placeholder={placeholders.email}
+                      disabled={isFormDisabled}
                     />
                     <InputField
                       label="Phone"
                       value={profileData.optional.phone}
                       onChange={(value) => handleInputChange("optional.phone", value)}
                       placeholder={placeholders.phone}
+                      disabled={isFormDisabled}
                     />
                     <div className="sm:col-span-2">
                       <InputField
@@ -206,15 +333,16 @@ const Profile = () => {
                         value={profileData.optional.address}
                         onChange={(value) => handleInputChange("optional.address", value)}
                         placeholder={placeholders.address}
+                        disabled={isFormDisabled}
                       />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
+              <Button type="submit" className="w-full sm:w-auto" disabled={isFormDisabled}>
                 <Save className="mr-2 h-4 w-4" />
-                {isLoading ? "Saving..." : "Save Profile"}
+                {isFetching ? "Loading..." : isLoading ? "Saving..." : "Save Profile"}
               </Button>
             </form>
           </TabsContent>
