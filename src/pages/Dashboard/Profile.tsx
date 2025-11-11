@@ -25,6 +25,29 @@ interface ProfileData {
   };
 }
 
+// Extracted to top level to preserve component identity between renders.
+const InputField = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) => (
+  <div className="space-y-1">
+    <Label className="text-sm">{label}</Label>
+    <Input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder ?? ""}
+      className="h-9"
+    />
+  </div>
+);
+
 const Profile = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -84,18 +107,6 @@ const Profile = () => {
     address: "e.g. Calle Norte 72-B #7812, Colonia Salvador Díaz Mirón...",
   };
 
-  const InputField = ({ label, value, onChange, placeholderKey }: { label: string; value: string; onChange: (value: string) => void; placeholderKey?: string }) => (
-    <div className="space-y-1">
-      <Label className="text-sm">{label}</Label>
-      <Input 
-        value={value} 
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholderKey ? placeholders[placeholderKey] : ""}
-        className="h-9"
-      />
-    </div>
-  );
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -129,37 +140,37 @@ const Profile = () => {
                       label="RFC"
                       value={profileData.required.rfc}
                       onChange={(value) => handleInputChange("required.rfc", value)}
-                      placeholderKey="rfc"
+                      placeholder={placeholders.rfc}
                     />
                     <InputField
                       label="Tax Regime"
                       value={profileData.required.regimen}
                       onChange={(value) => handleInputChange("required.regimen", value)}
-                      placeholderKey="regimen"
+                      placeholder={placeholders.regimen}
                     />
                     <InputField
                       label="Name"
                       value={profileData.required.nombre}
                       onChange={(value) => handleInputChange("required.nombre", value)}
-                      placeholderKey="nombre"
+                      placeholder={placeholders.nombre}
                     />
                     <InputField
                       label="First Surname"
                       value={profileData.required.primerApellido}
                       onChange={(value) => handleInputChange("required.primerApellido", value)}
-                      placeholderKey="primerApellido"
+                      placeholder={placeholders.primerApellido}
                     />
                     <InputField
                       label="Second Surname"
                       value={profileData.required.segundoApellido}
                       onChange={(value) => handleInputChange("required.segundoApellido", value)}
-                      placeholderKey="segundoApellido"
+                      placeholder={placeholders.segundoApellido}
                     />
                     <InputField
                       label="Postal Code"
                       value={profileData.required.codigoPostal}
                       onChange={(value) => handleInputChange("required.codigoPostal", value)}
-                      placeholderKey="codigoPostal"
+                      placeholder={placeholders.codigoPostal}
                     />
                   </div>
                 </CardContent>
@@ -175,26 +186,26 @@ const Profile = () => {
                       label="CURP"
                       value={profileData.optional.curp}
                       onChange={(value) => handleInputChange("optional.curp", value)}
-                      placeholderKey="curp"
+                      placeholder={placeholders.curp}
                     />
                     <InputField
                       label="Email"
                       value={profileData.optional.email}
                       onChange={(value) => handleInputChange("optional.email", value)}
-                      placeholderKey="email"
+                      placeholder={placeholders.email}
                     />
                     <InputField
                       label="Phone"
                       value={profileData.optional.phone}
                       onChange={(value) => handleInputChange("optional.phone", value)}
-                      placeholderKey="phone"
+                      placeholder={placeholders.phone}
                     />
                     <div className="sm:col-span-2">
                       <InputField
                         label="Full Address"
                         value={profileData.optional.address}
                         onChange={(value) => handleInputChange("optional.address", value)}
-                        placeholderKey="address"
+                        placeholder={placeholders.address}
                       />
                     </div>
                   </div>
