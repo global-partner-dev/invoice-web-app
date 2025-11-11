@@ -195,6 +195,46 @@ export async function upsertUserTaxProfile(userId: string, payload: UpsertTaxPro
   return data as TaxProfile;
 }
 
+export type TaxProfileExtractionResult = UpsertTaxProfilePayload;
+
+export async function extractTaxProfileFromDocument(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+  };
+
+  if (token) {
+    headers["x-supabase-auth-token"] = token;
+  }
+
+  const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/extract-tax-profile`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let message = "Failed to extract document";
+    try {
+      const errorBody = await response.json();
+      if (typeof errorBody?.error === "string") {
+        message = errorBody.error;
+      }
+    } catch (parseError) {
+      console.error("Failed to parse extraction error response", parseError);
+    }
+    throw new Error(message);
+  }
+
+  const result = await response.json();
+  return result.data as TaxProfileExtractionResult;
+}
+
 export async function updateUserProfile(userId: string, updates: Record<string, unknown>) {
   try {
     const { data, error } = await supabase
