@@ -1,87 +1,67 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Save, AlertCircle, CheckCircle } from "lucide-react";
-import DashboardLayout from "@/components/DashboardLayout";
+import { Save, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { verifyAndUpdateSubscription } from "@/lib/api";
+
+interface ProfileData {
+  required: {
+    rfc: string;
+    nombre: string;
+    primerApellido: string;
+    segundoApellido: string;
+    regimen: string;
+    codigoPostal: string;
+  };
+  optional: {
+    curp: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
+}
 
 const Profile = () => {
   const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<"pending" | "success" | "error" | null>(null);
-  const [profileData, setProfileData] = useState({
-    issuer_id: "",
-    issuer_rfc: "",
-    issuer_first_name: "",
-    issuer_last_name: "",
-    issuer_second_last_name: "",
-    issuer_email: "",
-    issuer_tax_regime: "",
-    issuer_postal_code: "",
-    issuer_password: "",
-    issuer_csf_status: "",
+  const [profileData, setProfileData] = useState<ProfileData>({
+    required: {
+      rfc: "",
+      nombre: "",
+      primerApellido: "",
+      segundoApellido: "",
+      regimen: "",
+      codigoPostal: "",
+    },
+    optional: {
+      curp: "",
+      email: "",
+      phone: "",
+      address: "",
+    },
   });
 
-  useEffect(() => {
-    const verifyPayment = async () => {
-      const sessionId = searchParams.get("session_id");
-      if (!sessionId) return;
-
-      setIsVerifying(true);
-      setVerificationStatus("pending");
-
-      try {
-        const email = localStorage.getItem("checkout_email");
-        if (!email) {
-          throw new Error("Email not found. Please complete checkout again.");
-        }
-
-        const result = await verifyAndUpdateSubscription(sessionId, email);
-
-        setVerificationStatus("success");
-        toast({
-          title: "Subscription activated!",
-          description: `You are now subscribed to the ${result.subscription.plan} plan.`,
-        });
-
-        localStorage.removeItem("checkout_email");
-        setSearchParams({}, { replace: true });
-
-        setTimeout(() => {
-          setVerificationStatus(null);
-        }, 3000);
-      } catch (error) {
-        console.error("Payment verification error:", error);
-        setVerificationStatus("error");
-        toast({
-          title: "Verification failed",
-          description: error instanceof Error ? error.message : "Failed to verify your subscription",
-          variant: "destructive",
-        });
-      } finally {
-        setIsVerifying(false);
+  const handleInputChange = (path: string, value: string) => {
+    const keys = path.split(".");
+    setProfileData(prev => {
+      const updated = JSON.parse(JSON.stringify(prev));
+      let current = updated;
+      for (let i = 0; i < keys.length - 1; i++) {
+        current = current[keys[i]];
       }
-    };
-
-    verifyPayment();
-  }, [searchParams, setSearchParams, toast]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
+      current[keys[keys.length - 1]] = value;
+      return updated;
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate save
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -91,49 +71,46 @@ const Profile = () => {
     }, 1000);
   };
 
+  const placeholders: Record<string, string> = {
+    rfc: "e.g. AAPU790804II9",
+    nombre: "e.g. Ulises",
+    primerApellido: "e.g. Alcántara",
+    segundoApellido: "e.g. Pérez",
+    regimen: "e.g. Régimen de Personas Físicas con Actividades Empresariales",
+    codigoPostal: "e.g. 07400",
+    curp: "e.g. AAPU790804HDFLRL03",
+    email: "e.g. odysseusre@yahoo.com.mx",
+    phone: "e.g. 55-57578026",
+    address: "e.g. Calle Norte 72-B #7812, Colonia Salvador Díaz Mirón...",
+  };
+
+  const InputField = ({ label, value, onChange, placeholderKey }: { label: string; value: string; onChange: (value: string) => void; placeholderKey?: string }) => (
+    <div className="space-y-1">
+      <Label className="text-sm">{label}</Label>
+      <Input 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholderKey ? placeholders[placeholderKey] : ""}
+        className="h-9"
+      />
+    </div>
+  );
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       toast({
         title: "File uploaded",
-        description: `${file.name} has been uploaded successfully.`,
+        description: `${file.name} has been uploaded. Processing with OCR...`,
       });
-      // Handle file upload logic here
     }
   };
 
   return (
     <DashboardLayout userRole="user">
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6">Profile Management</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">Taxpayer Profile</h1>
 
-        {isVerifying && (
-          <Card className="mb-4 sm:mb-6 border-blue-200 bg-blue-50">
-            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 flex-shrink-0"></div>
-              <p className="text-blue-700 text-sm sm:text-base text-center sm:text-left">Verifying your subscription payment...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {verificationStatus === "success" && (
-          <Card className="mb-4 sm:mb-6 border-green-200 bg-green-50">
-            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <p className="text-green-700 text-sm sm:text-base text-center sm:text-left">Your subscription has been activated successfully!</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {verificationStatus === "error" && (
-          <Card className="mb-4 sm:mb-6 border-red-200 bg-red-50">
-            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <p className="text-red-700 text-sm sm:text-base text-center sm:text-left">Failed to verify subscription. Please contact support if the issue persists.</p>
-            </CardContent>
-          </Card>
-        )}
-        
         <Tabs defaultValue="details" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-2 gap-2">
             <TabsTrigger value="details" className="text-xs sm:text-sm">Profile Details</TabsTrigger>
@@ -141,126 +118,94 @@ const Profile = () => {
           </TabsList>
 
           <TabsContent value="details">
-            <Card>
-              <CardHeader>
-                <CardTitle>Issuer Information</CardTitle>
-                <CardDescription>
-                  Complete your profile to start generating invoices
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <form onSubmit={handleSave} className="space-y-4 sm:space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_id">Issuer ID</Label>
-                      <Input
-                        id="issuer_id"
-                        value={profileData.issuer_id}
-                        onChange={(e) => handleInputChange("issuer_id", e.target.value)}
-                        placeholder="Enter issuer ID"
-                      />
-                    </div>
+            <form onSubmit={handleSave} className="space-y-3">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Required Information *</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <InputField
+                      label="RFC"
+                      value={profileData.required.rfc}
+                      onChange={(value) => handleInputChange("required.rfc", value)}
+                      placeholderKey="rfc"
+                    />
+                    <InputField
+                      label="Tax Regime"
+                      value={profileData.required.regimen}
+                      onChange={(value) => handleInputChange("required.regimen", value)}
+                      placeholderKey="regimen"
+                    />
+                    <InputField
+                      label="Name"
+                      value={profileData.required.nombre}
+                      onChange={(value) => handleInputChange("required.nombre", value)}
+                      placeholderKey="nombre"
+                    />
+                    <InputField
+                      label="First Surname"
+                      value={profileData.required.primerApellido}
+                      onChange={(value) => handleInputChange("required.primerApellido", value)}
+                      placeholderKey="primerApellido"
+                    />
+                    <InputField
+                      label="Second Surname"
+                      value={profileData.required.segundoApellido}
+                      onChange={(value) => handleInputChange("required.segundoApellido", value)}
+                      placeholderKey="segundoApellido"
+                    />
+                    <InputField
+                      label="Postal Code"
+                      value={profileData.required.codigoPostal}
+                      onChange={(value) => handleInputChange("required.codigoPostal", value)}
+                      placeholderKey="codigoPostal"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_rfc">RFC</Label>
-                      <Input
-                        id="issuer_rfc"
-                        value={profileData.issuer_rfc}
-                        onChange={(e) => handleInputChange("issuer_rfc", e.target.value)}
-                        placeholder="Enter RFC"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_first_name">First Name</Label>
-                      <Input
-                        id="issuer_first_name"
-                        value={profileData.issuer_first_name}
-                        onChange={(e) => handleInputChange("issuer_first_name", e.target.value)}
-                        placeholder="Enter first name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_last_name">Last Name</Label>
-                      <Input
-                        id="issuer_last_name"
-                        value={profileData.issuer_last_name}
-                        onChange={(e) => handleInputChange("issuer_last_name", e.target.value)}
-                        placeholder="Enter last name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_second_last_name">Second Last Name</Label>
-                      <Input
-                        id="issuer_second_last_name"
-                        value={profileData.issuer_second_last_name}
-                        onChange={(e) => handleInputChange("issuer_second_last_name", e.target.value)}
-                        placeholder="Enter second last name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_email">Email</Label>
-                      <Input
-                        id="issuer_email"
-                        type="email"
-                        value={profileData.issuer_email}
-                        onChange={(e) => handleInputChange("issuer_email", e.target.value)}
-                        placeholder="Enter email"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_tax_regime">Tax Regime</Label>
-                      <Input
-                        id="issuer_tax_regime"
-                        value={profileData.issuer_tax_regime}
-                        onChange={(e) => handleInputChange("issuer_tax_regime", e.target.value)}
-                        placeholder="Enter tax regime"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_postal_code">Postal Code</Label>
-                      <Input
-                        id="issuer_postal_code"
-                        value={profileData.issuer_postal_code}
-                        onChange={(e) => handleInputChange("issuer_postal_code", e.target.value)}
-                        placeholder="Enter postal code"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_password">Password</Label>
-                      <Input
-                        id="issuer_password"
-                        type="password"
-                        value={profileData.issuer_password}
-                        onChange={(e) => handleInputChange("issuer_password", e.target.value)}
-                        placeholder="Enter password"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="issuer_csf_status">CSF Status</Label>
-                      <Input
-                        id="issuer_csf_status"
-                        value={profileData.issuer_csf_status}
-                        onChange={(e) => handleInputChange("issuer_csf_status", e.target.value)}
-                        placeholder="Enter CSF status"
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Optional Information</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <InputField
+                      label="CURP"
+                      value={profileData.optional.curp}
+                      onChange={(value) => handleInputChange("optional.curp", value)}
+                      placeholderKey="curp"
+                    />
+                    <InputField
+                      label="Email"
+                      value={profileData.optional.email}
+                      onChange={(value) => handleInputChange("optional.email", value)}
+                      placeholderKey="email"
+                    />
+                    <InputField
+                      label="Phone"
+                      value={profileData.optional.phone}
+                      onChange={(value) => handleInputChange("optional.phone", value)}
+                      placeholderKey="phone"
+                    />
+                    <div className="sm:col-span-2">
+                      <InputField
+                        label="Full Address"
+                        value={profileData.optional.address}
+                        onChange={(value) => handleInputChange("optional.address", value)}
+                        placeholderKey="address"
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {isLoading ? "Saving..." : "Save Profile"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+              <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
+                <Save className="mr-2 h-4 w-4" />
+                {isLoading ? "Saving..." : "Save Profile"}
+              </Button>
+            </form>
           </TabsContent>
 
           <TabsContent value="upload">
@@ -268,10 +213,10 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle>Upload Documents</CardTitle>
                 <CardDescription>
-                  Upload images or PDFs to auto-fill invoice information
+                  Upload images or PDFs to auto-fill invoice information with OCR
                 </CardDescription>
               </CardHeader>
-              <CardContent className="px-4 sm:px-6 space-y-4 sm:space-y-6">
+              <CardContent className="space-y-4 sm:space-y-6">
                 <div className="border-2 border-dashed border-border rounded-lg p-6 sm:p-8 lg:p-12 text-center hover:border-primary transition-colors">
                   <Upload className="h-8 sm:h-10 lg:h-12 w-8 sm:w-10 lg:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
                   <Label htmlFor="file-upload" className="cursor-pointer block">
@@ -295,8 +240,8 @@ const Profile = () => {
                   <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
                     <li>• Tax receipts and invoices</li>
                     <li>• Business registration documents</li>
-                    <li>• Expense reports</li>
-                    <li>• Product catalogs</li>
+                    <li>• RFC certificates</li>
+                    <li>• Address proofs</li>
                   </ul>
                 </div>
               </CardContent>
