@@ -62,33 +62,35 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
-      <div className="p-4 flex items-center justify-between border-b">
+    <Sidebar collapsible="icon" className="border-r hidden sm:flex">
+      <div className="p-2 sm:p-4 flex items-center justify-between border-b gap-2">
         {open && (
-          <h2 className="text-lg font-semibold text-sidebar-foreground">
+          <h2 className="text-base sm:text-lg font-semibold text-sidebar-foreground truncate">
             Invoice App
           </h2>
         )}
-        <SidebarTrigger>
-          <Menu className="h-5 w-5" />
+        <SidebarTrigger className="h-8 w-8 sm:h-10 sm:w-10">
+          <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
         </SidebarTrigger>
       </div>
 
-      <SidebarContent>
+      <SidebarContent className="flex-1">
         <SidebarGroup>
-          <SidebarGroupLabel>{userRole === "admin" ? "Admin" : "Dashboard"}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs sm:text-sm px-2 sm:px-4">
+            {userRole === "admin" ? "Admin" : "Dashboard"}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild className="text-sm sm:text-base">
                     <NavLink
                       to={item.url}
-                      className="flex items-center gap-3"
+                      className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -98,15 +100,19 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <div className="mt-auto p-4 border-t">
+      <div className="mt-auto p-2 sm:p-4 border-t">
         <Button
           variant="ghost"
-          className="w-full justify-start"
+          className="w-full justify-start text-sm sm:text-base h-9 sm:h-10 px-2 sm:px-4"
           onClick={handleLogout}
           disabled={isLoggingOut}
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          {open && <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>}
+          <LogOut className="h-4 w-4 sm:h-5 sm:w-5 mr-0 sm:mr-2 flex-shrink-0" />
+          {open && (
+            <span className="hidden sm:inline ml-2">
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </span>
+          )}
         </Button>
       </div>
     </Sidebar>
