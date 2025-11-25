@@ -1,10 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.8.0?target=deno";
+import { serve } from "https://deno.land/std@0.177.1/http/server.ts";
+import Stripe from "npm:stripe@^14.8.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2023-10-16",
-  httpClient: Stripe.createFetchHttpClient(),
 });
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");

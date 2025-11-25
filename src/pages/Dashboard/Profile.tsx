@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import {
   extractTaxProfileFromDocument,
   getUserTaxProfile,
   upsertUserTaxProfile,
+  verifyAndUpdateSubscription,
   type TaxProfileExtractionResult,
 } from "@/lib/api";
 
@@ -64,8 +66,10 @@ const allowedUploadMimeTypes = new Set(["application/pdf", "image/png", "image/j
 const Profile = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
     required: {
       rfc: "",
@@ -139,6 +143,60 @@ const Profile = () => {
 
   const getErrorMessage = (error: unknown) =>
     error instanceof Error ? error.message : "An unexpected error occurred.";
+
+  // Handle subscription verification after Stripe payment
+  useEffect(() => {
+    const sessionId = searchParams.get("session_id");
+    if (!sessionId || isVerifyingSubscription) {
+      return;
+    }
+
+    const verifySubscription = async () => {
+      // Get email from user object or localStorage
+      const email = user?.email || localStorage.getItem("checkout_email");
+      
+      if (!email) {
+        toast({
+          title: "Verification failed",
+          description: "Unable to verify subscription: email not found",
+          variant: "destructive",
+        });
+        // Clean up URL
+        searchParams.delete("session_id");
+        setSearchParams(searchParams, { replace: true });
+        return;
+      }
+
+      setIsVerifyingSubscription(true);
+
+      try {
+        const result = await verifyAndUpdateSubscription(sessionId, email);
+        
+        // Clean up localStorage and URL
+        localStorage.removeItem("checkout_email");
+        searchParams.delete("session_id");
+        setSearchParams(searchParams, { replace: true });
+
+        toast({
+          title: "Subscription activated!",
+          description: `Your ${result.subscription?.plan || "subscription"} is now active.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Subscription verification failed",
+          description: getErrorMessage(error),
+          variant: "destructive",
+        });
+        // Still clean up URL even on error
+        searchParams.delete("session_id");
+        setSearchParams(searchParams, { replace: true });
+      } finally {
+        setIsVerifyingSubscription(false);
+      }
+    };
+
+    verifySubscription();
+  }, [searchParams, user?.email, isVerifyingSubscription, toast, setSearchParams]);
 
   useEffect(() => {
     let active = true;
