@@ -8,6 +8,7 @@ import { Phone, Lock, User, ArrowLeft, Mail } from "lucide-react";
 import { SubscriptionPlans } from "@/components/SubscriptionPlans";
 import { useToast } from "@/hooks/use-toast";
 import { signupWithEmail, validatePassword, loginWithEmail } from "@/lib/api";
+import { normalizePhoneNumber } from "@/lib/utils";
 
 const Subscription = () => {
   const navigate = useNavigate();
@@ -72,7 +73,9 @@ const Subscription = () => {
 
     setIsLoading(true);
     try {
-      await signupWithEmail(email, password, fullName, phoneNumber);
+      // Normalize phone number to format: 5217221015653
+      const normalizedPhone = normalizePhoneNumber(phoneNumber);
+      await signupWithEmail(email, password, fullName, normalizedPhone);
       
       try {
         await loginWithEmail(email, password);
@@ -169,13 +172,16 @@ const Subscription = () => {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+52 722 101 5653"
+                      placeholder="52 1 722 101 5653"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
                       disabled={isLoading}
                       required
                     />
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Any format accepted (e.g. +52 1 722 101 5653, 52 1 722 101 5653)
+                    </p>
                   </div>
                 </div>
 

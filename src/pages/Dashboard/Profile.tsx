@@ -16,6 +16,7 @@ import {
   verifyAndUpdateSubscription,
   type TaxProfileExtractionResult,
 } from "@/lib/api";
+import { normalizePhoneNumber } from "@/lib/utils";
 
 interface ProfileData {
   required: {
@@ -302,6 +303,11 @@ const Profile = () => {
     setIsLoading(true);
 
     try {
+      // Normalize phone number if provided
+      const normalizedPhone = trimmedData.optional.phone
+        ? normalizePhoneNumber(trimmedData.optional.phone)
+        : null;
+
       await upsertUserTaxProfile(user.id, {
         rfc: toNullable(trimmedData.required.rfc),
         tax_regime: toNullable(trimmedData.required.regimen),
@@ -311,7 +317,7 @@ const Profile = () => {
         postal_code: toNullable(trimmedData.required.codigoPostal),
         curp: toNullable(trimmedData.optional.curp),
         email: toNullable(trimmedData.optional.email),
-        phone: toNullable(trimmedData.optional.phone),
+        phone: normalizedPhone,
         address: toNullable(trimmedData.optional.address),
       });
 

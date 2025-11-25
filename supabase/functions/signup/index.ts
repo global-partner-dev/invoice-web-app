@@ -26,7 +26,7 @@ serve(async (req: Request) => {
 
   try {
     const body: SignupRequest = await req.json();
-    const { email, password, fullName, phoneNumber } = body;
+    let { email, password, fullName, phoneNumber } = body;
 
     if (!email || !password || !fullName || !phoneNumber) {
       return new Response(
@@ -36,6 +36,25 @@ serve(async (req: Request) => {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         }
       );
+    }
+
+    // Normalize phone number to format: 5217221015653
+    // Remove all non-digit characters
+    const digitsOnly = phoneNumber.replace(/\D/g, "");
+    
+    // If it already starts with 52, use it as is
+    // Otherwise, add country code 52 (assuming Mexican numbers)
+    if (digitsOnly.startsWith("52")) {
+      phoneNumber = digitsOnly;
+    } else if (digitsOnly.startsWith("1")) {
+      // Mexican mobile numbers starting with 1
+      phoneNumber = `52${digitsOnly}`;
+    } else if (digitsOnly.length >= 10) {
+      // Other valid length numbers, add country code
+      phoneNumber = `52${digitsOnly}`;
+    } else {
+      // Too short, but still normalize
+      phoneNumber = `52${digitsOnly}`;
     }
 
     const supabaseAdmin = createClient(supabaseUrl || "", supabaseServiceRoleKey || "", {

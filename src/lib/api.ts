@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { normalizePhoneNumber } from "./utils";
 
 const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL + "/functions/v1";
 
@@ -117,11 +118,14 @@ export async function createUserProfile(phoneNumber: string, fullName?: string, 
     }
     if (!user) throw new Error("No authenticated user");
 
+    // Normalize phone number to format: 5217221015653
+    const normalizedPhone = normalizePhoneNumber(phoneNumber);
+
     const { data, error } = await supabase
       .from("users")
       .insert({
         id: user.id,
-        phone_number: phoneNumber,
+        phone_number: normalizedPhone,
         full_name: fullName,
         email,
       })
