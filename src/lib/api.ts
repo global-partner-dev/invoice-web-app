@@ -155,6 +155,7 @@ export interface TaxProfile {
   address: string | null;
   certificate_path: string | null;
   certificate_key_path: string | null;
+  certificate_passphrase: string | null;
   certificate_uploaded_at: string | null;
   created_at: string;
   updated_at: string;
@@ -242,10 +243,11 @@ export async function extractTaxProfileFromDocument(file: File) {
   return result.data as TaxProfileExtractionResult;
 }
 
-export async function uploadCertificate(certificateFile: File, keyFile: File) {
+export async function uploadCertificate(certificateFile: File, keyFile: File, passphrase: string = "") {
   const formData = new FormData();
   formData.append("certificate", certificateFile);
   formData.append("key", keyFile);
+  formData.append("passphrase", passphrase);
 
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;

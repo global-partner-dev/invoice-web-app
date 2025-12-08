@@ -94,6 +94,7 @@ const Profile = () => {
   const [extractedProfile, setExtractedProfile] = useState<ProfileData | null>(null);
   const [selectedCertFile, setSelectedCertFile] = useState<File | null>(null);
   const [selectedKeyFile, setSelectedKeyFile] = useState<File | null>(null);
+  const [certificatePassphrase, setCertificatePassphrase] = useState<string>("");
   const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
   const [isDeletingCertificate, setIsDeletingCertificate] = useState(false);
 
@@ -513,6 +514,15 @@ const Profile = () => {
       return;
     }
 
+    if (!certificatePassphrase.trim()) {
+      toast({
+        title: "Missing passphrase",
+        description: "Please enter the certificate passphrase.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!user?.id) {
       toast({
         title: "Error",
@@ -525,10 +535,11 @@ const Profile = () => {
     setIsUploadingCertificate(true);
 
     try {
-      await uploadCertificate(selectedCertFile, selectedKeyFile);
+      await uploadCertificate(selectedCertFile, selectedKeyFile, certificatePassphrase);
 
       setSelectedCertFile(null);
       setSelectedKeyFile(null);
+      setCertificatePassphrase("");
 
       const updatedProfile = await getUserTaxProfile(user.id);
       if (updatedProfile) {
@@ -856,27 +867,47 @@ const Profile = () => {
                     </div>
 
                     {(selectedCertFile || selectedKeyFile) && (
-                      <div className="flex gap-2 sm:gap-3 pt-4">
-                        <Button
-                          onClick={handleUploadCertificate}
-                          disabled={!selectedCertFile || !selectedKeyFile || isUploadingCertificate}
-                          className="flex-1 sm:flex-none"
-                        >
-                          <Upload className="mr-2 h-4 w-4" />
-                          {isUploadingCertificate ? "Uploading..." : "Upload Certificate"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedCertFile(null);
-                            setSelectedKeyFile(null);
-                          }}
-                          disabled={isUploadingCertificate}
-                          className="flex-1 sm:flex-none"
-                        >
-                          <X className="mr-2 h-4 w-4" />
-                          Clear
-                        </Button>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="passphrase" className="text-sm font-medium mb-2 block">
+                            Certificate Passphrase
+                          </Label>
+                          <Input
+                            id="passphrase"
+                            type="password"
+                            placeholder="Enter the passphrase for your private key"
+                            value={certificatePassphrase}
+                            onChange={(e) => setCertificatePassphrase(e.target.value)}
+                            className="h-9"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            This passphrase will be stored securely and used when registering your certificate with Finkok.
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2 sm:gap-3">
+                          <Button
+                            onClick={handleUploadCertificate}
+                            disabled={!selectedCertFile || !selectedKeyFile || !certificatePassphrase.trim() || isUploadingCertificate}
+                            className="flex-1 sm:flex-none"
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            {isUploadingCertificate ? "Uploading..." : "Upload Certificate"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCertFile(null);
+                              setSelectedKeyFile(null);
+                              setCertificatePassphrase("");
+                            }}
+                            disabled={isUploadingCertificate}
+                            className="flex-1 sm:flex-none"
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Clear
+                          </Button>
+                        </div>
                       </div>
                     )}
 

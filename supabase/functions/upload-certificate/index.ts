@@ -59,6 +59,7 @@ serve(async (req: Request) => {
     const formData = await req.formData();
     const certificateFile = formData.get("certificate") as File | null;
     const keyFile = formData.get("key") as File | null;
+    const passphrase = (formData.get("passphrase") as string) || "";
 
     if (!certificateFile || !keyFile) {
       return errorResponse(400, "Both certificate (.cer) and key (.key) files are required");
@@ -119,6 +120,7 @@ serve(async (req: Request) => {
       .update({
         certificate_path: certPath,
         certificate_key_path: keyPath,
+        certificate_passphrase: passphrase || null,
         certificate_uploaded_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
