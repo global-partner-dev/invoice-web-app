@@ -153,6 +153,9 @@ export interface TaxProfile {
   email: string | null;
   phone: string | null;
   address: string | null;
+  certificate_path: string | null;
+  certificate_key_path: string | null;
+  certificate_uploaded_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -237,6 +240,58 @@ export async function extractTaxProfileFromDocument(file: File) {
 
   const result = await response.json();
   return result.data as TaxProfileExtractionResult;
+}
+
+export async function uploadCertificate(certificateFile: File, keyFile: File) {
+  const formData = new FormData();
+  formData.append("certificate", certificateFile);
+  formData.append("key", keyFile);
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+
+  if (!token) {
+    throw new Error("No authentication token available");
+  }
+
+  const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/upload-certificate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let message = "Failed to upload certificate";
+    try {
+      const errorBody = await response.json();
+      if (typeof errorBody?.error === "string") {
+        message = errorBody.error;
+      }
+    } catch (parseError) {
+      console.error("Failed to parse upload error response", parseError);
+    }
+    throw new Error(message);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+export async function deleteCertificate(userId: string) {
+  const { error } = await supabase
+    .from("tax_profiles")
+    .update({
+      certificate_path: null,
+      certificate_key_path: null,
+      certificate_uploaded_at: null,
+    })
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function updateUserProfile(userId: string, updates: Record<string, unknown>) {

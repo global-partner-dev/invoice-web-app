@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Upload } from "lucide-react";
+import { Save, Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -14,6 +14,8 @@ import {
   getUserTaxProfile,
   upsertUserTaxProfile,
   verifyAndUpdateSubscription,
+  uploadCertificate,
+  deleteCertificate,
   type TaxProfileExtractionResult,
 } from "@/lib/api";
 import { normalizePhoneNumber } from "@/lib/utils";
@@ -90,6 +92,10 @@ const Profile = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSendingDocument, setIsSendingDocument] = useState(false);
   const [extractedProfile, setExtractedProfile] = useState<ProfileData | null>(null);
+  const [selectedCertFile, setSelectedCertFile] = useState<File | null>(null);
+  const [selectedKeyFile, setSelectedKeyFile] = useState<File | null>(null);
+  const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
+  const [isDeletingCertificate, setIsDeletingCertificate] = useState(false);
 
   const toFieldValue = (value: string | null | undefined) => {
     if (typeof value === "string") {
@@ -460,15 +466,135 @@ const Profile = () => {
     });
   };
 
+  const handleCertificateFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "cert" | "key") => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    e.target.value = "";
+
+    const fileName = file.name.toLowerCase();
+    const isValidCert = type === "cert" && (fileName.endsWith(".cer") || fileName.endsWith(".pem"));
+    const isValidKey = type === "key" && (fileName.endsWith(".key") || fileName.endsWith(".pem"));
+
+    if (!isValidCert && !isValidKey) {
+      toast({
+        title: "Invalid file",
+        description: type === "cert" ? "Certificate must be .cer or .pem format" : "Key must be .key or .pem format",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > MAX_UPLOAD_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please choose a file under 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (type === "cert") {
+      setSelectedCertFile(file);
+    } else {
+      setSelectedKeyFile(file);
+    }
+  };
+
+  const handleUploadCertificate = async () => {
+    if (!selectedCertFile || !selectedKeyFile) {
+      toast({
+        title: "Missing files",
+        description: "Please select both certificate (.cer) and key (.key) files.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingCertificate(true);
+
+    try {
+      await uploadCertificate(selectedCertFile, selectedKeyFile);
+
+      setSelectedCertFile(null);
+      setSelectedKeyFile(null);
+
+      const updatedProfile = await getUserTaxProfile(user.id);
+      if (updatedProfile) {
+        setProfileData(prev => ({
+          ...prev,
+        }));
+      }
+
+      toast({
+        title: "Certificate uploaded",
+        description: "Your certificate and key have been uploaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingCertificate(false);
+    }
+  };
+
+  const handleDeleteCertificate = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDeletingCertificate(true);
+
+    try {
+      await deleteCertificate(user.id);
+
+      setSelectedCertFile(null);
+      setSelectedKeyFile(null);
+
+      toast({
+        title: "Certificate deleted",
+        description: "Your certificate and key have been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Deletion failed",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingCertificate(false);
+    }
+  };
+
   return (
     <DashboardLayout userRole="user">
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">Taxpayer Profile</h1>
 
         <Tabs defaultValue="details" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 gap-2">
+          <TabsList className="grid w-full grid-cols-3 gap-2">
             <TabsTrigger value="details" className="text-xs sm:text-sm">Profile Details</TabsTrigger>
             <TabsTrigger value="upload" className="text-xs sm:text-sm">Upload Documents</TabsTrigger>
+            <TabsTrigger value="certificates" className="text-xs sm:text-sm">Certificates</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details">
@@ -652,6 +778,141 @@ const Profile = () => {
                     <li>• Address proofs</li>
                   </ul>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="certificates">
+            <Card>
+              <CardHeader>
+                <CardTitle>Digital Certificates</CardTitle>
+                <CardDescription>
+                  Upload your digital certificate (.cer) and private key (.key) for invoice signing
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 sm:space-y-6">
+                {profileData.required.rfc ? (
+                  <div className="space-y-4">
+                    {profileData.required.rfc && (
+                      <div className="rounded-lg border border-border/70 p-4">
+                        <p className="text-sm font-medium mb-2">RFC: {profileData.required.rfc}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="cert-upload" className="text-sm font-medium mb-2 block">
+                            Certificate File (.cer or .pem)
+                          </Label>
+                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors">
+                            <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                            <Label htmlFor="cert-upload" className="cursor-pointer block">
+                              <span className="text-primary font-medium text-sm">Click to upload</span>
+                            </Label>
+                            <Input
+                              id="cert-upload"
+                              type="file"
+                              accept=".cer,.pem"
+                              className="hidden"
+                              onChange={(e) => handleCertificateFileChange(e, "cert")}
+                            />
+                          </div>
+                          {selectedCertFile && (
+                            <div className="mt-2 flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{selectedCertFile.name}</span>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="key-upload" className="text-sm font-medium mb-2 block">
+                            Private Key File (.key or .pem)
+                          </Label>
+                          <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors">
+                            <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                            <Label htmlFor="key-upload" className="cursor-pointer block">
+                              <span className="text-primary font-medium text-sm">Click to upload</span>
+                            </Label>
+                            <Input
+                              id="key-upload"
+                              type="file"
+                              accept=".key,.pem"
+                              className="hidden"
+                              onChange={(e) => handleCertificateFileChange(e, "key")}
+                            />
+                          </div>
+                          {selectedKeyFile && (
+                            <div className="mt-2 flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{selectedKeyFile.name}</span>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {(selectedCertFile || selectedKeyFile) && (
+                      <div className="flex gap-2 sm:gap-3 pt-4">
+                        <Button
+                          onClick={handleUploadCertificate}
+                          disabled={!selectedCertFile || !selectedKeyFile || isUploadingCertificate}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          {isUploadingCertificate ? "Uploading..." : "Upload Certificate"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedCertFile(null);
+                            setSelectedKeyFile(null);
+                          }}
+                          disabled={isUploadingCertificate}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+
+                    {profileData.required.rfc && !selectedCertFile && !selectedKeyFile && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <div className="flex gap-3">
+                          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="text-sm text-blue-800">
+                            <p className="font-medium mb-1">Upload your certificate files</p>
+                            <p className="text-blue-700">Your certificate and key will be securely stored and used for signing invoices automatically.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {profileData.required.rfc && !selectedCertFile && !selectedKeyFile && (
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteCertificate}
+                        disabled={isDeletingCertificate}
+                      >
+                        {isDeletingCertificate ? "Removing..." : "Remove Certificate"}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex gap-3">
+                      <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-amber-800">
+                        <p className="font-medium mb-1">RFC Required</p>
+                        <p className="text-amber-700">Please fill in your RFC in the Profile Details tab before uploading your certificate.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

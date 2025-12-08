@@ -1,0 +1,4 @@
+ALTER TABLE tax_profiles
+ADD COLUMN IF NOT EXISTS certificate_path VARCHAR(512),
+ADD COLUMN IF NOT EXISTS certificate_key_path VARCHAR(512),
+ADD COLUMN IF NOT EXISTS certificate_uploaded_at TIMESTAMP WITH TIME ZONE;
