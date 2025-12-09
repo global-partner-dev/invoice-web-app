@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -97,6 +98,13 @@ const Profile = () => {
   const [certificatePassphrase, setCertificatePassphrase] = useState<string>("");
   const [isUploadingCertificate, setIsUploadingCertificate] = useState(false);
   const [isDeletingCertificate, setIsDeletingCertificate] = useState(false);
+  const [taxConfig, setTaxConfig] = useState({
+    apply_iva: true,
+    apply_isr: false,
+    tax_inclusive: true,
+    iva_rate: 0.16,
+    isr_rate: 0.10,
+  });
 
   const toFieldValue = (value: string | null | undefined) => {
     if (typeof value === "string") {
@@ -237,6 +245,16 @@ const Profile = () => {
               address: data.address ?? "",
             },
           });
+          // Load tax configuration
+          if (data.apply_iva !== null || data.apply_isr !== null || data.tax_inclusive !== null) {
+            setTaxConfig({
+              apply_iva: data.apply_iva ?? true,
+              apply_isr: data.apply_isr ?? false,
+              tax_inclusive: data.tax_inclusive ?? true,
+              iva_rate: data.iva_rate ?? 0.16,
+              isr_rate: data.isr_rate ?? 0.10,
+            });
+          }
         }
       } catch (error) {
         if (active) {
@@ -326,6 +344,11 @@ const Profile = () => {
         email: toNullable(trimmedData.optional.email),
         phone: normalizedPhone,
         address: toNullable(trimmedData.optional.address),
+        apply_iva: taxConfig.apply_iva,
+        apply_isr: taxConfig.apply_isr,
+        tax_inclusive: taxConfig.tax_inclusive,
+        iva_rate: taxConfig.iva_rate,
+        isr_rate: taxConfig.isr_rate,
       });
 
       toast({
@@ -698,6 +721,120 @@ const Profile = () => {
                         disabled={isFormDisabled}
                       />
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Tax Configuration</CardTitle>
+                  <CardDescription className="text-sm">
+                    Configure how taxes are calculated for your invoices. In Mexico, prices typically include taxes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="tax-inclusive" className="text-sm font-medium">
+                        Prices Include Taxes
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        When enabled, the amount you specify already includes taxes (standard in Mexico)
+                      </p>
+                    </div>
+                    <Switch
+                      id="tax-inclusive"
+                      checked={taxConfig.tax_inclusive}
+                      onCheckedChange={(checked) => setTaxConfig(prev => ({ ...prev, tax_inclusive: checked }))}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="apply-iva" className="text-sm font-medium">
+                        Apply IVA (VAT)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enable if you need to apply Value Added Tax (IVA)
+                      </p>
+                    </div>
+                    <Switch
+                      id="apply-iva"
+                      checked={taxConfig.apply_iva}
+                      onCheckedChange={(checked) => setTaxConfig(prev => ({ ...prev, apply_iva: checked }))}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+
+                  {taxConfig.apply_iva && (
+                    <div className="pl-4 border-l-2 border-border">
+                      <Label htmlFor="iva-rate" className="text-sm">
+                        IVA Rate (%)
+                      </Label>
+                      <Input
+                        id="iva-rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={(taxConfig.iva_rate * 100).toFixed(2)}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setTaxConfig(prev => ({ ...prev, iva_rate: value / 100 }));
+                        }}
+                        disabled={isFormDisabled}
+                        className="h-9 mt-1"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="apply-isr" className="text-sm font-medium">
+                        Apply ISR (Income Tax)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enable if you need to apply Income Tax (ISR) - typically for professionals
+                      </p>
+                    </div>
+                    <Switch
+                      id="apply-isr"
+                      checked={taxConfig.apply_isr}
+                      onCheckedChange={(checked) => setTaxConfig(prev => ({ ...prev, apply_isr: checked }))}
+                      disabled={isFormDisabled}
+                    />
+                  </div>
+
+                  {taxConfig.apply_isr && (
+                    <div className="pl-4 border-l-2 border-border">
+                      <Label htmlFor="isr-rate" className="text-sm">
+                        ISR Rate (%)
+                      </Label>
+                      <Input
+                        id="isr-rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={(taxConfig.isr_rate * 100).toFixed(2)}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setTaxConfig(prev => ({ ...prev, isr_rate: value / 100 }));
+                        }}
+                        disabled={isFormDisabled}
+                        className="h-9 mt-1"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-4 p-3 bg-muted rounded-md">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Examples:</strong>
+                      <br />• Doctors: Disable both IVA and ISR
+                      <br />• Some professionals: Enable only ISR
+                      <br />• Businesses: Enable both IVA and ISR
+                    </p>
                   </div>
                 </CardContent>
               </Card>

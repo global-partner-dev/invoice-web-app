@@ -153,6 +153,11 @@ export interface TaxProfile {
   email: string | null;
   phone: string | null;
   address: string | null;
+  apply_iva: boolean | null;
+  apply_isr: boolean | null;
+  tax_inclusive: boolean | null;
+  iva_rate: number | null;
+  isr_rate: number | null;
   certificate_path: string | null;
   certificate_key_path: string | null;
   certificate_passphrase: string | null;
@@ -172,6 +177,11 @@ export interface UpsertTaxProfilePayload {
   email: string | null;
   phone: string | null;
   address: string | null;
+  apply_iva?: boolean | null;
+  apply_isr?: boolean | null;
+  tax_inclusive?: boolean | null;
+  iva_rate?: number | null;
+  isr_rate?: number | null;
 }
 
 export async function getUserTaxProfile(userId: string) {
