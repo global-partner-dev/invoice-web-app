@@ -497,3 +497,220 @@ export async function getAllUsers() {
     throw error;
   }
 }
+
+// Invoice Usage and Subscription Details
+
+export async function getSubscriptionUsage(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select(`
+        id,
+        available_invoices,
+        invoice_limit,
+        status,
+        plan_id,
+        subscription_plans (
+          id,
+          name
+        )
+      `)
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw error;
+    }
+
+    if (data) {
+      return {
+        subscriptionId: data.id,
+        availableInvoices: data.available_invoices || data.invoice_limit || 0,
+        invoiceLimit: data.invoice_limit || 0,
+        planName: data.subscription_plans?.[0]?.name || "Unknown",
+        status: data.status,
+      };
+    }
+
+    return {
+      subscriptionId: null,
+      availableInvoices: 2,
+      invoiceLimit: 2,
+      planName: "Free",
+      status: "inactive",
+    };
+  } catch (error) {
+    console.error("Get subscription usage error:", error);
+    throw error;
+  }
+}
+
+export async function getInvoiceHistory(userId: string, limit: number = 10) {
+  try {
+    const { data, error } = await supabase
+      .from("invoice_history")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Get invoice history error:", error);
+    throw error;
+  }
+}
+
+export async function getAccountantAccount(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("accountant_accounts")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw error;
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("Get accountant account error:", error);
+    throw error;
+  }
+}
+
+export async function getAccountantClients(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("accountant_clients")
+      .select("*")
+      .eq("accountant_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Get accountant clients error:", error);
+    throw error;
+  }
+}
+
+export async function addAccountantClient(
+  userId: string,
+  clientName: string,
+  clientRfc?: string,
+  clientEmail?: string,
+  clientPhone?: string
+) {
+  try {
+    const { data, error } = await supabase
+      .from("accountant_clients")
+      .insert([
+        {
+          accountant_id: userId,
+          client_name: clientName,
+          client_rfc: clientRfc || null,
+          client_email: clientEmail || null,
+          client_phone: clientPhone || null,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Add accountant client error:", error);
+    throw error;
+  }
+}
+
+export async function deleteAccountantClient(clientId: string) {
+  try {
+    const { error } = await supabase
+      .from("accountant_clients")
+      .delete()
+      .eq("id", clientId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Delete accountant client error:", error);
+    throw error;
+  }
+}
+
+// Top-up Products and Purchases
+
+export async function getTopupProducts() {
+  try {
+    const { data, error } = await supabase
+      .from("topup_products")
+      .select("*")
+      .eq("is_active", true)
+      .order("invoice_count", { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Get topup products error:", error);
+    throw error;
+  }
+}
+
+export async function createTopupCheckoutSession(email: string, topupProductId: string) {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-topup-checkout-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        email,
+        topupProductId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create topup checkout session");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Create topup checkout session error:", error);
+    throw error;
+  }
+}
+
+export async function getActiveTopups(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("topup_purchases")
+      .select(`
+        id,
+        invoice_count,
+        used_count,
+        expires_at,
+        purchased_at,
+        topup_products (
+          name,
+          invoice_count
+        )
+      `)
+      .eq("user_id", userId)
+      .gt("expires_at", new Date().toISOString())
+      .eq("is_used", false)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Get active topups error:", error);
+    throw error;
+  }
+}
