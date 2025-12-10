@@ -25,7 +25,7 @@ CREATE POLICY "Anyone can read subscription plans" ON subscription_plans
 -- Insert subscription plans
 INSERT INTO subscription_plans (stripe_product_id, name, description, features, is_active)
 VALUES 
-  ('prod_TNzwfr5LsNLC9b', 'Basic', 'Basic plan for small teams', '["Feature 1", "Feature 2"]'::jsonb, true),
-  ('prod_TO00dJw423j5fk', 'Standard', 'Standard plan for growing teams', '["Feature 1", "Feature 2", "Feature 3", "Feature 4"]'::jsonb, true),
-  ('prod_TO01G6FwP0mI9R', 'Premium', 'Premium plan for enterprises', '["Feature 1", "Feature 2", "Feature 3", "Feature 4", "Feature 5", "Feature 6"]'::jsonb, true)
+  ('prod_TNzwfr5LsNLC9b', 'Basic', 'Basic plan for small businesses', '["50 invoices can be issued per month"]'::jsonb, true),
+  ('prod_TO00dJw423j5fk', 'Standard', 'Standard plan for medium businesses', '["150 invoices can be issued per month"]'::jsonb, true),
+  ('prod_TO01G6FwP0mI9R', 'Premium', 'Premium plan for enterprises, accountants and agencies', '["500 invoices can be issued per month"]'::jsonb, true)
 ON CONFLICT (stripe_product_id) DO NOTHING;
