@@ -102,6 +102,7 @@ serve(async (req: Request) => {
         phone_number: phoneNumber,
         full_name: fullName,
         email,
+        free_tier_invoice_count: 2,
       });
 
     if (profileError) {

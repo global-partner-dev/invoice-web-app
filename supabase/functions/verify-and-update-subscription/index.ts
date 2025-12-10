@@ -15,6 +15,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function getPlanInvoiceLimit(stripeProductId: string): number {
+  const PLAN_LIMITS: Record<string, number> = {
+    'prod_TNzwfr5LsNLC9b': 50,
+    'prod_TO00dJw423j5fk': 100,
+    'prod_TO01G6FwP0mI9R': 250,
+  };
+  
+  return PLAN_LIMITS[stripeProductId] || 0;
+}
+
 interface VerifyRequest {
   sessionId: string;
   email: string;
@@ -163,6 +173,8 @@ serve(async (req: Request) => {
     const plan = planResponse.data;
 
     const stripeSubscriptionId = customerSession.subscription || `one_time_${sessionId}`;
+    
+    const invoiceLimit = getPlanInvoiceLimit(productId);
 
     const subscriptionData = {
       user_id: user.id,
@@ -173,6 +185,11 @@ serve(async (req: Request) => {
       current_period_start: new Date((subscription.current_period_start as number) * 1000).toISOString(),
       current_period_end: new Date((subscription.current_period_end as number) * 1000).toISOString(),
       cancel_at_period_end: (subscription.cancel_at_period_end as boolean) || false,
+      billing_cycle_start: new Date((subscription.current_period_start as number) * 1000).toISOString(),
+      billing_cycle_end: new Date((subscription.current_period_end as number) * 1000).toISOString(),
+      invoice_limit: invoiceLimit,
+      available_invoices: invoiceLimit,
+      invoice_count: 0,
     };
 
     const existingSubscriptionResponse = await supabaseAdmin

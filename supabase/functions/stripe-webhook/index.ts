@@ -9,6 +9,16 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+function getPlanInvoiceLimit(stripeProductId: string): number {
+  const PLAN_LIMITS: Record<string, number> = {
+    'prod_TNzwfr5LsNLC9b': 50,
+    'prod_TO00dJw423j5fk': 100,
+    'prod_TO01G6FwP0mI9R': 250,
+  };
+  
+  return PLAN_LIMITS[stripeProductId] || 0;
+}
+
 async function updateUserSubscription(event: Record<string, unknown>) {
   try {
     const data = event.data as Record<string, unknown>;
@@ -67,15 +77,25 @@ async function updateUserSubscription(event: Record<string, unknown>) {
 
     console.log(`Found plan: ${plan.id}`);
 
+    const invoiceLimit = await getPlanInvoiceLimit(productId);
+
+    const currentPeriodStart = new Date((object.current_period_start as number) * 1000).toISOString();
+    const currentPeriodEnd = new Date((object.current_period_end as number) * 1000).toISOString();
+
     const subscriptionData = {
       user_id: user.id,
       plan_id: plan.id,
       stripe_customer_id: customer,
       stripe_subscription_id: subscription,
       status: object.status,
-      current_period_start: new Date((object.current_period_start as number) * 1000).toISOString(),
-      current_period_end: new Date((object.current_period_end as number) * 1000).toISOString(),
+      current_period_start: currentPeriodStart,
+      current_period_end: currentPeriodEnd,
       cancel_at_period_end: object.cancel_at_period_end as boolean || false,
+      billing_cycle_start: currentPeriodStart,
+      billing_cycle_end: currentPeriodEnd,
+      invoice_limit: invoiceLimit,
+      available_invoices: invoiceLimit,
+      invoice_count: 0,
     };
 
     const existingResponse = await fetch(
@@ -93,7 +113,22 @@ async function updateUserSubscription(event: Record<string, unknown>) {
 
     if (existingResponse.length > 0) {
       console.log(`Updating existing subscription: ${existingResponse[0].id}`);
-      const updateResult = await fetch(
+      
+      const updatePayload = {
+        status: object.status,
+        current_period_start: currentPeriodStart,
+        current_period_end: currentPeriodEnd,
+        billing_cycle_start: currentPeriodStart,
+        billing_cycle_end: currentPeriodEnd,
+        cancel_at_period_end: object.cancel_at_period_end as boolean || false,
+        invoice_limit: invoiceLimit,
+        available_invoices: invoiceLimit,
+        invoice_count: 0,
+      };
+
+      console.log(`Update payload:`, updatePayload);
+      
+      const updateResponse = await fetch(
         `${supabaseUrl}/rest/v1/subscriptions?stripe_subscription_id=eq.${subscription}`,
         {
           method: "PATCH",
@@ -103,15 +138,28 @@ async function updateUserSubscription(event: Record<string, unknown>) {
             apikey: supabaseServiceRoleKey || "",
             Prefer: "return=representation",
           },
-          body: JSON.stringify(subscriptionData),
+          body: JSON.stringify(updatePayload),
         }
-      ).then((r) => r.json());
+      );
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        console.error(`Failed to update subscription: ${updateResponse.status}`, errorText);
+        throw new Error(`Failed to update subscription: ${errorText}`);
+      } else {
+        const updateResult = await updateResponse.json();
+        console.log(`Subscription updated successfully:`, {
+          id: updateResult[0]?.id,
+          invoice_limit: updateResult[0]?.invoice_limit,
+          available_invoices: updateResult[0]?.available_invoices,
+          status: updateResult[0]?.status,
+        });
+      }
 
       subscriptionId = existingResponse[0].id;
-      console.log(`Subscription updated: ${subscriptionId}`);
     } else {
       console.log(`Creating new subscription`);
-      const insertResult = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
+      const insertResponse = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,10 +168,21 @@ async function updateUserSubscription(event: Record<string, unknown>) {
           Prefer: "return=representation",
         },
         body: JSON.stringify(subscriptionData),
-      }).then((r) => r.json());
+      });
 
+      if (!insertResponse.ok) {
+        const errorText = await insertResponse.text();
+        console.error(`Failed to create subscription: ${insertResponse.status}`, errorText);
+        throw new Error(`Failed to create subscription: ${errorText}`);
+      }
+
+      const insertResult = await insertResponse.json();
       subscriptionId = insertResult[0]?.id;
-      console.log(`Subscription created: ${subscriptionId}`);
+      console.log(`Subscription created with data:`, {
+        id: subscriptionId,
+        invoice_limit: insertResult[0]?.invoice_limit,
+        available_invoices: insertResult[0]?.available_invoices,
+      });
     }
 
     const updateUserResult = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
