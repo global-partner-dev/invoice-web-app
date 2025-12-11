@@ -54,7 +54,7 @@ export function ClientsManagement({
 
   useEffect(() => {
     fetchClients();
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchClients = async () => {
     try {
@@ -86,13 +86,12 @@ export function ClientsManagement({
 
     setIsAdding(true);
     try {
-      const newClient = await addAccountantClient(
-        userId,
-        formData.name,
-        formData.rfc || undefined,
-        formData.email || undefined,
-        formData.phone || undefined
-      );
+      const newClient = await addAccountantClient(userId, {
+        clientName: formData.name,
+        clientRfc: formData.rfc || undefined,
+        clientEmail: formData.email || undefined,
+        clientPhone: formData.phone || undefined,
+      });
 
       setClients([newClient, ...clients]);
       setFormData({ name: "", rfc: "", email: "", phone: "" });

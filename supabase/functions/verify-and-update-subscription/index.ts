@@ -241,6 +241,44 @@ serve(async (req: Request) => {
 
     console.log(`Successfully synced subscription for user ${user.id}`);
 
+    if (productId === 'prod_TO01G6FwP0mI9R') {
+      console.log(`Creating accountant account for Premium plan subscriber: ${user.id}`);
+      
+      const accountNumber = `ACC-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const accountantResponse = await supabaseAdmin
+        .from("accountant_accounts")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!accountantResponse.data) {
+        const createAccountantResponse = await supabaseAdmin
+          .from("accountant_accounts")
+          .insert({
+            user_id: user.id,
+            accountant_account_number: accountNumber,
+            client_invoice_count: 0,
+            max_client_invoices: 500,
+          })
+          .select()
+          .single();
+
+        if (createAccountantResponse.error) {
+          console.error("Accountant account creation error:", createAccountantResponse.error);
+        } else {
+          console.log(`Accountant account created: ${createAccountantResponse.data.id}`);
+          
+          await supabaseAdmin
+            .from("users")
+            .update({ accountant_account_id: createAccountantResponse.data.id })
+            .eq("id", user.id);
+        }
+      } else {
+        console.log(`User already has accountant account: ${accountantResponse.data.id}`);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

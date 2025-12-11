@@ -714,3 +714,126 @@ export async function getActiveTopups(userId: string) {
     throw error;
   }
 }
+
+export async function getAccountantAccount(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("accountant_accounts")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      throw error;
+    }
+    return data || null;
+  } catch (error) {
+    console.error("Get accountant account error:", error);
+    return null;
+  }
+}
+
+export interface AccountantClient {
+  id: string;
+  accountant_id: string;
+  client_name: string;
+  client_rfc: string | null;
+  client_email: string | null;
+  client_phone: string | null;
+  invoice_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getAccountantClients(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("accountant_clients")
+      .select("*")
+      .eq("accountant_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return (data as AccountantClient[]) || [];
+  } catch (error) {
+    console.error("Get accountant clients error:", error);
+    throw error;
+  }
+}
+
+export async function addAccountantClient(
+  userId: string,
+  clientData: {
+    clientName: string;
+    clientRfc?: string;
+    clientEmail?: string;
+    clientPhone?: string;
+  }
+) {
+  try {
+    const { data, error } = await supabase
+      .from("accountant_clients")
+      .insert({
+        accountant_id: userId,
+        client_name: clientData.clientName,
+        client_rfc: clientData.clientRfc || null,
+        client_email: clientData.clientEmail || null,
+        client_phone: clientData.clientPhone || null,
+        invoice_count: 0,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as AccountantClient;
+  } catch (error) {
+    console.error("Add accountant client error:", error);
+    throw error;
+  }
+}
+
+export async function updateAccountantClient(
+  clientId: string,
+  clientData: Partial<{
+    clientName: string;
+    clientRfc: string;
+    clientEmail: string;
+    clientPhone: string;
+  }>
+) {
+  try {
+    const updateData: Record<string, unknown> = {};
+    if (clientData.clientName) updateData.client_name = clientData.clientName;
+    if (clientData.clientRfc) updateData.client_rfc = clientData.clientRfc;
+    if (clientData.clientEmail) updateData.client_email = clientData.clientEmail;
+    if (clientData.clientPhone) updateData.client_phone = clientData.clientPhone;
+
+    const { data, error } = await supabase
+      .from("accountant_clients")
+      .update(updateData)
+      .eq("id", clientId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as AccountantClient;
+  } catch (error) {
+    console.error("Update accountant client error:", error);
+    throw error;
+  }
+}
+
+export async function deleteAccountantClient(clientId: string) {
+  try {
+    const { error } = await supabase
+      .from("accountant_clients")
+      .delete()
+      .eq("id", clientId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Delete accountant client error:", error);
+    throw error;
+  }
+}

@@ -77,7 +77,7 @@ async function updateUserSubscription(event: Record<string, unknown>) {
 
     console.log(`Found plan: ${plan.id}`);
 
-    const invoiceLimit = await getPlanInvoiceLimit(productId);
+    const invoiceLimit = getPlanInvoiceLimit(plan.stripe_product_id);
 
     const currentPeriodStart = new Date((object.current_period_start as number) * 1000).toISOString();
     const currentPeriodEnd = new Date((object.current_period_end as number) * 1000).toISOString();
@@ -198,6 +198,65 @@ async function updateUserSubscription(event: Record<string, unknown>) {
     }).then((r) => r.json());
 
     console.log(`User ${user.id} subscription_id updated to ${subscriptionId}`);
+
+    if (productId === 'prod_TO01G6FwP0mI9R') {
+      console.log(`Creating accountant account for Premium plan subscriber: ${user.id}`);
+      
+      const accountNumber = `ACC-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const accountantCheckResponse = await fetch(
+        `${supabaseUrl}/rest/v1/accountant_accounts?user_id=eq.${user.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${supabaseServiceRoleKey}`,
+            apikey: supabaseServiceRoleKey || "",
+          },
+        }
+      ).then((r) => r.json());
+
+      if (!accountantCheckResponse[0]) {
+        const createAccountantResponse = await fetch(
+          `${supabaseUrl}/rest/v1/accountant_accounts`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              apikey: supabaseServiceRoleKey || "",
+              Prefer: "return=representation",
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              accountant_account_number: accountNumber,
+              client_invoice_count: 0,
+              max_client_invoices: 500,
+            }),
+          }
+        );
+
+        if (createAccountantResponse.ok) {
+          const accountantData = await createAccountantResponse.json();
+          console.log(`Accountant account created: ${accountantData[0]?.id}`);
+          
+          await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              apikey: supabaseServiceRoleKey || "",
+            },
+            body: JSON.stringify({
+              accountant_account_id: accountantData[0]?.id,
+            }),
+          });
+        } else {
+          const errorText = await createAccountantResponse.text();
+          console.error(`Failed to create accountant account: ${createAccountantResponse.status}`, errorText);
+        }
+      } else {
+        console.log(`User already has accountant account: ${accountantCheckResponse[0].id}`);
+      }
+    }
   } catch (error) {
     console.error("updateUserSubscription error:", error);
     throw error;

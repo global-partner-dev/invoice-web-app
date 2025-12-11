@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
+import { ClientsManagement } from "@/components/ClientsManagement";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,8 @@ import {
   verifyAndUpdateSubscription,
   uploadCertificate,
   deleteCertificate,
+  getAccountantAccount,
+  getUserSubscription,
   type TaxProfileExtractionResult,
 } from "@/lib/api";
 import { normalizePhoneNumber } from "@/lib/utils";
@@ -74,6 +77,9 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
+  const [accountantAccount, setAccountantAccount] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
     required: {
       rfc: "",
@@ -227,33 +233,49 @@ const Profile = () => {
 
       setIsFetching(true);
       try {
-        const data = await getUserTaxProfile(user.id);
-        if (data && active) {
-          setProfileData({
-            required: {
-              rfc: data.rfc ?? "",
-              nombre: data.first_name ?? "",
-              primerApellido: data.first_surname ?? "",
-              segundoApellido: data.second_surname ?? "",
-              regimen: data.tax_regime ?? "",
-              codigoPostal: data.postal_code ?? "",
-            },
-            optional: {
-              curp: data.curp ?? "",
-              email: data.email ?? "",
-              phone: data.phone ?? "",
-              address: data.address ?? "",
-            },
-          });
-          // Load tax configuration
-          if (data.apply_iva !== null || data.apply_isr !== null || data.tax_inclusive !== null) {
-            setTaxConfig({
-              apply_iva: data.apply_iva ?? true,
-              apply_isr: data.apply_isr ?? false,
-              tax_inclusive: data.tax_inclusive ?? true,
-              iva_rate: data.iva_rate ?? 0.16,
-              isr_rate: data.isr_rate ?? 0.10,
+        const [taxData, subData, accountantData] = await Promise.all([
+          getUserTaxProfile(user.id),
+          getUserSubscription(user.id),
+          getAccountantAccount(user.id),
+        ]);
+
+        if (active) {
+          if (taxData) {
+            setProfileData({
+              required: {
+                rfc: taxData.rfc ?? "",
+                nombre: taxData.first_name ?? "",
+                primerApellido: taxData.first_surname ?? "",
+                segundoApellido: taxData.second_surname ?? "",
+                regimen: taxData.tax_regime ?? "",
+                codigoPostal: taxData.postal_code ?? "",
+              },
+              optional: {
+                curp: taxData.curp ?? "",
+                email: taxData.email ?? "",
+                phone: taxData.phone ?? "",
+                address: taxData.address ?? "",
+              },
             });
+            // Load tax configuration
+            if (taxData.apply_iva !== null || taxData.apply_isr !== null || taxData.tax_inclusive !== null) {
+              setTaxConfig({
+                apply_iva: taxData.apply_iva ?? true,
+                apply_isr: taxData.apply_isr ?? false,
+                tax_inclusive: taxData.tax_inclusive ?? true,
+                iva_rate: taxData.iva_rate ?? 0.16,
+                isr_rate: taxData.isr_rate ?? 0.10,
+              });
+            }
+          }
+
+          if (subData) {
+            setSubscription(subData);
+            setIsPremium(subData.subscription_plans?.name === "Premium");
+          }
+
+          if (accountantData) {
+            setAccountantAccount(accountantData);
           }
         }
       } catch (error) {
@@ -625,10 +647,13 @@ const Profile = () => {
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">Taxpayer Profile</h1>
 
         <Tabs defaultValue="details" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 gap-2">
+          <TabsList className={`grid w-full ${isPremium ? "grid-cols-4" : "grid-cols-3"} gap-2`}>
             <TabsTrigger value="details" className="text-xs sm:text-sm">Profile Details</TabsTrigger>
             <TabsTrigger value="upload" className="text-xs sm:text-sm">Upload Documents</TabsTrigger>
             <TabsTrigger value="certificates" className="text-xs sm:text-sm">Certificates</TabsTrigger>
+            {isPremium && (
+              <TabsTrigger value="clients" className="text-xs sm:text-sm">Clients</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="details">
@@ -1084,6 +1109,31 @@ const Profile = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isPremium && (
+            <TabsContent value="clients">
+              {accountantAccount ? (
+                <ClientsManagement 
+                  userId={user?.id || ""} 
+                  accountantAccountNumber={accountantAccount.accountant_account_number}
+                />
+              ) : (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                      <div className="flex gap-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">Accountant Account Setup</p>
+                          <p className="text-blue-700">Your accountant account is being created. Please refresh the page in a moment.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>
