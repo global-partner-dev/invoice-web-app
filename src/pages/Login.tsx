@@ -7,11 +7,13 @@ import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { loginWithEmail, checkIfAdmin } from "@/lib/api";
+import ForgotPassword from "@/components/ForgotPassword";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -81,7 +83,16 @@ const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm md:text-base">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm md:text-base">Password</Label>
+                <button
+                  type="button"
+                  onClick={() => setForgotPasswordOpen(true)}
+                  className="text-xs md:text-sm text-primary hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -114,6 +125,7 @@ const Login = () => {
           </form>
         </CardContent>
       </Card>
+      <ForgotPassword open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen} />
     </div>
   );
 };
