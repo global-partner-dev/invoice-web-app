@@ -97,7 +97,7 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
 
       toast({
         title: "Success",
-        description: "Client added successfully. They have been sent a temporary password.",
+        description: "Client added successfully. Password: zxcQWE123!@#",
       });
     } catch (error) {
       toast({

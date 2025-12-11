@@ -7,6 +7,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 interface DashboardLayoutProps {
   children: ReactNode;
   userRole?: "admin" | "user";
+  isLinkedUser?: boolean;
 }
 
 const MobileHeader = () => {
@@ -27,11 +28,11 @@ const MobileHeader = () => {
   );
 };
 
-const DashboardLayout = ({ children, userRole = "user" }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, userRole = "user", isLinkedUser = false }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full flex-col sm:flex-row">
-        <AppSidebar userRole={userRole} />
+        <AppSidebar userRole={userRole} isLinkedUser={isLinkedUser} />
         <div className="flex-1 flex flex-col w-full">
           <MobileHeader />
           <main className="flex-1 p-3 sm:p-6 md:p-8 bg-muted/30 overflow-auto">

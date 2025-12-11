@@ -13,6 +13,7 @@ import {
   getSubscriptionPlans,
   createCheckoutSession,
   createTopupCheckoutSession,
+  getUserProfile,
 } from "@/lib/api";
 
 interface TopupProduct {
@@ -51,20 +52,27 @@ const Subscriptions = () => {
   const [activeTopups, setActiveTopups] = useState<ActiveTopup[]>([]);
   const [selectedTopup, setSelectedTopup] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isLinkedUser, setIsLinkedUser] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
       setLoading(true);
       try {
-        const [usage, topups, activeTopupsList] = await Promise.all([
+        const [usage, topups, activeTopupsList, profileData] = await Promise.all([
           getSubscriptionUsage(user.id),
           getTopupProducts(),
           getActiveTopups(user.id),
+          getUserProfile(user.id),
         ]);
         setSubscriptionUsage(usage);
         setTopupProducts(topups);
         setActiveTopups(activeTopupsList);
+        
+        // Check if user is linked to an accountant
+        if (profileData?.related_account) {
+          setIsLinkedUser(true);
+        }
       } catch (error) {
         console.error("Error fetching subscription data:", error);
         toast({
@@ -149,7 +157,7 @@ const Subscriptions = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout isLinkedUser={isLinkedUser}>
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground">Loading subscription information...</p>
         </div>
@@ -158,7 +166,7 @@ const Subscriptions = () => {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout isLinkedUser={isLinkedUser}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>

@@ -95,8 +95,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // Create a temporary password for the linked user
-    const tempPassword = `TempPass${Date.now()}!@#`;
+    // Use the default password for linked users
+    const tempPassword = "zxcQWE123!@#";
 
     // Create auth user using service role
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({

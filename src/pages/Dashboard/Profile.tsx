@@ -19,6 +19,7 @@ import {
   uploadCertificate,
   deleteCertificate,
   getUserSubscription,
+  getUserProfile,
   type TaxProfileExtractionResult,
 } from "@/lib/api";
 import { normalizePhoneNumber } from "@/lib/utils";
@@ -78,6 +79,7 @@ const Profile = () => {
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const [isPremium, setIsPremium] = useState(false);
+  const [isLinkedUser, setIsLinkedUser] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
     required: {
       rfc: "",
@@ -231,12 +233,18 @@ const Profile = () => {
 
       setIsFetching(true);
       try {
-        const [taxData, subData] = await Promise.all([
+        const [taxData, subData, profileData] = await Promise.all([
           getUserTaxProfile(user.id),
           getUserSubscription(user.id),
+          getUserProfile(user.id),
         ]);
 
         if (active) {
+          // Check if user is linked to an accountant
+          if (profileData?.related_account) {
+            setIsLinkedUser(true);
+          }
+
           if (taxData) {
             setProfileData({
               required: {
@@ -635,7 +643,7 @@ const Profile = () => {
   };
 
   return (
-    <DashboardLayout userRole="user">
+    <DashboardLayout userRole="user" isLinkedUser={isLinkedUser}>
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">Taxpayer Profile</h1>
 

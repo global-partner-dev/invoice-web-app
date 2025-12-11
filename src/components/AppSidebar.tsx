@@ -20,9 +20,10 @@ import { logout } from "@/lib/api";
 
 interface AppSidebarProps {
   userRole: "admin" | "user";
+  isLinkedUser?: boolean;
 }
 
-export function AppSidebar({ userRole }: AppSidebarProps) {
+export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) {
   const { open } = useSidebar();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,7 +38,12 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     { title: "User Management", url: "/admin/users", icon: Users },
   ];
 
-  const items = userRole === "admin" ? adminItems : userItems;
+  let items = userRole === "admin" ? adminItems : userItems;
+  
+  // Hide Subscriptions item for linked users
+  if (isLinkedUser && userRole === "user") {
+    items = items.filter((item) => item.title !== "Subscriptions");
+  }
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
