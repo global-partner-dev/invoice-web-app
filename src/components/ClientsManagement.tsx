@@ -13,43 +13,24 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getAccountantClients,
-  addAccountantClient,
-  deleteAccountantClient,
-} from "@/lib/api";
-
-interface Client {
-  id: string;
-  client_name: string;
-  client_rfc?: string;
-  client_email?: string;
-  client_phone?: string;
-  invoice_count: number;
-  created_at: string;
-}
+import { getLinkedUsers, createAndLinkUser, unlinkUser, type LinkedUser } from "@/lib/api";
 
 interface ClientsManagementProps {
   userId: string;
-  accountantAccountNumber?: string;
 }
 
-export function ClientsManagement({
-  userId,
-  accountantAccountNumber,
-}: ClientsManagementProps) {
+export function ClientsManagement({ userId }: ClientsManagementProps) {
   const { toast } = useToast();
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<LinkedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    name: "",
-    rfc: "",
+    fullName: "",
     email: "",
-    phone: "",
+    phoneNumber: "",
   });
 
   useEffect(() => {
@@ -59,7 +40,7 @@ export function ClientsManagement({
   const fetchClients = async () => {
     try {
       setIsLoading(true);
-      const data = await getAccountantClients(userId);
+      const data = await getLinkedUsers(userId);
       setClients(data);
     } catch (error) {
       toast({
@@ -75,7 +56,7 @@ export function ClientsManagement({
   const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    if (!formData.fullName.trim()) {
       toast({
         title: "Error",
         description: "Client name is required",
@@ -84,22 +65,39 @@ export function ClientsManagement({
       return;
     }
 
+    if (!formData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Client email is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.phoneNumber.trim()) {
+      toast({
+        title: "Error",
+        description: "Client phone is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAdding(true);
     try {
-      const newClient = await addAccountantClient(userId, {
-        clientName: formData.name,
-        clientRfc: formData.rfc || undefined,
-        clientEmail: formData.email || undefined,
-        clientPhone: formData.phone || undefined,
+      const newClient = await createAndLinkUser(userId, {
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
       });
 
       setClients([newClient, ...clients]);
-      setFormData({ name: "", rfc: "", email: "", phone: "" });
+      setFormData({ fullName: "", email: "", phoneNumber: "" });
       setIsDialogOpen(false);
 
       toast({
         title: "Success",
-        description: "Client added successfully",
+        description: "Client added successfully. They have been sent a temporary password.",
       });
     } catch (error) {
       toast({
@@ -115,17 +113,17 @@ export function ClientsManagement({
   const handleDeleteClient = async (clientId: string) => {
     setIsDeletingId(clientId);
     try {
-      await deleteAccountantClient(clientId);
-      setClients(clients.filter(c => c.id !== clientId));
+      await unlinkUser(clientId);
+      setClients(clients.filter((c) => c.id !== clientId));
 
       toast({
         title: "Success",
-        description: "Client deleted successfully",
+        description: "Client removed successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete client",
+        description: error instanceof Error ? error.message : "Failed to remove client",
         variant: "destructive",
       });
     } finally {
@@ -142,7 +140,7 @@ export function ClientsManagement({
             <div>
               <CardTitle>Your Clients</CardTitle>
               <CardDescription>
-                {accountantAccountNumber && `Account #${accountantAccountNumber}`}
+                Manage users linked to your account
               </CardDescription>
             </div>
           </div>
@@ -157,19 +155,19 @@ export function ClientsManagement({
               <DialogHeader>
                 <DialogTitle>Add New Client</DialogTitle>
                 <DialogDescription>
-                  Add a new client to your accountant account.
+                  Create a new user account and link them as your client.
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={handleAddClient} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="client-name">Client Name *</Label>
+                  <Label htmlFor="client-name">Full Name *</Label>
                   <Input
                     id="client-name"
-                    placeholder="Client Business Name"
-                    value={formData.name}
+                    placeholder="John Doe"
+                    value={formData.fullName}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, fullName: e.target.value })
                     }
                     disabled={isAdding}
                     required
@@ -177,20 +175,7 @@ export function ClientsManagement({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="client-rfc">RFC (Tax ID)</Label>
-                  <Input
-                    id="client-rfc"
-                    placeholder="RFC123456789ABC"
-                    value={formData.rfc}
-                    onChange={(e) =>
-                      setFormData({ ...formData, rfc: e.target.value })
-                    }
-                    disabled={isAdding}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="client-email">Email</Label>
+                  <Label htmlFor="client-email">Email *</Label>
                   <Input
                     id="client-email"
                     type="email"
@@ -200,24 +185,26 @@ export function ClientsManagement({
                       setFormData({ ...formData, email: e.target.value })
                     }
                     disabled={isAdding}
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="client-phone">Phone</Label>
+                  <Label htmlFor="client-phone">Phone *</Label>
                   <Input
                     id="client-phone"
                     placeholder="52 1 222 333 4444"
-                    value={formData.phone}
+                    value={formData.phoneNumber}
                     onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
+                      setFormData({ ...formData, phoneNumber: e.target.value })
                     }
                     disabled={isAdding}
+                    required
                   />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isAdding}>
-                  {isAdding ? "Adding..." : "Add Client"}
+                  {isAdding ? "Creating..." : "Create and Link Client"}
                 </Button>
               </form>
             </DialogContent>
@@ -248,17 +235,14 @@ export function ClientsManagement({
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{client.client_name}</p>
+                  <p className="font-medium text-sm">{client.full_name || "Unnamed Client"}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                    {client.client_rfc && (
-                      <span>RFC: {client.client_rfc}</span>
+                    {client.phone_number && (
+                      <span>📱 {client.phone_number}</span>
                     )}
-                    {client.client_email && (
-                      <span>📧 {client.client_email}</span>
+                    {client.email && (
+                      <span>📧 {client.email}</span>
                     )}
-                    <span className="ml-auto">
-                      {client.invoice_count} invoice{client.invoice_count !== 1 ? "s" : ""}
-                    </span>
                   </div>
                 </div>
                 <Button

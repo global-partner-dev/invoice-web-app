@@ -18,7 +18,6 @@ import {
   verifyAndUpdateSubscription,
   uploadCertificate,
   deleteCertificate,
-  getAccountantAccount,
   getUserSubscription,
   type TaxProfileExtractionResult,
 } from "@/lib/api";
@@ -77,7 +76,6 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isVerifyingSubscription, setIsVerifyingSubscription] = useState(false);
-  const [accountantAccount, setAccountantAccount] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -233,10 +231,9 @@ const Profile = () => {
 
       setIsFetching(true);
       try {
-        const [taxData, subData, accountantData] = await Promise.all([
+        const [taxData, subData] = await Promise.all([
           getUserTaxProfile(user.id),
           getUserSubscription(user.id),
-          getAccountantAccount(user.id),
         ]);
 
         if (active) {
@@ -272,10 +269,6 @@ const Profile = () => {
           if (subData) {
             setSubscription(subData);
             setIsPremium(subData.subscription_plans?.name === "Premium");
-          }
-
-          if (accountantData) {
-            setAccountantAccount(accountantData);
           }
         }
       } catch (error) {
@@ -1112,26 +1105,7 @@ const Profile = () => {
 
           {isPremium && (
             <TabsContent value="clients">
-              {accountantAccount ? (
-                <ClientsManagement 
-                  userId={user?.id || ""} 
-                  accountantAccountNumber={accountantAccount.accountant_account_number}
-                />
-              ) : (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                      <div className="flex gap-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-blue-800">
-                          <p className="font-medium mb-1">Accountant Account Setup</p>
-                          <p className="text-blue-700">Your accountant account is being created. Please refresh the page in a moment.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <ClientsManagement userId={user?.id || ""} />
             </TabsContent>
           )}
         </Tabs>
