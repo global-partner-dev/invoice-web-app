@@ -1,4 +1,4 @@
-import { User, Users, LogOut, Menu } from "lucide-react";
+import { User, Users, LogOut, Menu, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -30,6 +30,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
 
   const userItems = [
     { title: "Profile", url: "/dashboard/profile", icon: User },
+    { title: "Subscriptions", url: "/dashboard/subscriptions", icon: CreditCard },
   ];
 
   const adminItems = [

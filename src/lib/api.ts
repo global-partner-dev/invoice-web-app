@@ -528,14 +528,27 @@ export async function getSubscriptionUsage(userId: string) {
         subscriptionId: data.id,
         availableInvoices: data.available_invoices || data.invoice_limit || 0,
         invoiceLimit: data.invoice_limit || 0,
-        planName: data.subscription_plans?.[0]?.name || "Unknown",
+        planName: data.subscription_plans?.name || "Unknown",
         status: data.status,
       };
     }
 
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("free_tier_invoice_count")
+      .eq("id", userId)
+      .single();
+
+    if (userError && userError.code !== "PGRST116") {
+      throw userError;
+    }
+
+    const freeInvoiceCount = userData?.free_tier_invoice_count || 0;
+    const availableFreeInvoices = Math.max(0, 2 - freeInvoiceCount);
+
     return {
       subscriptionId: null,
-      availableInvoices: 2,
+      availableInvoices: availableFreeInvoices,
       invoiceLimit: 2,
       planName: "Free",
       status: "inactive",

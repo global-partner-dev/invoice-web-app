@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Subscription from "./pages/Subscription";
 import Profile from "./pages/Dashboard/Profile";
+import Subscriptions from "./pages/Dashboard/Subscriptions";
 import Users from "./pages/Admin/Users";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/subscriptions"
+            element={
+              <ProtectedRoute>
+                <Subscriptions />
               </ProtectedRoute>
             }
           />
