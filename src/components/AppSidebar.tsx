@@ -1,5 +1,6 @@
 import { User, Users, LogOut, Menu, CreditCard, BarChart3 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -24,26 +25,27 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) {
+  const { t } = useTranslation();
   const { open } = useSidebar();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const userItems = [
-    { title: "Profile", url: "/dashboard/profile", icon: User },
-    { title: "Subscriptions", url: "/dashboard/subscriptions", icon: CreditCard },
+    { title: t("sidebar.profile"), url: "/dashboard/profile", icon: User },
+    { title: t("sidebar.subscriptions"), url: "/dashboard/subscriptions", icon: CreditCard },
   ];
 
   const adminItems = [
-    { title: "User Management", url: "/admin/users", icon: Users },
-    { title: "Subscriptions", url: "/admin/subscriptions", icon: BarChart3 },
+    { title: t("sidebar.userManagement"), url: "/admin/users", icon: Users },
+    { title: t("sidebar.subscriptions"), url: "/admin/subscriptions", icon: BarChart3 },
   ];
 
   let items = userRole === "admin" ? adminItems : userItems;
   
   // Hide Subscriptions item for linked users
   if (isLinkedUser && userRole === "user") {
-    items = items.filter((item) => item.title !== "Subscriptions");
+    items = items.filter((item) => item.title !== t("sidebar.subscriptions"));
   }
 
   const handleLogout = async () => {
@@ -51,8 +53,8 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
     try {
       await logout();
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
+        title: t("common.logout"),
+        description: t("sidebar.logoutSuccess"),
       });
       setTimeout(() => {
         navigate("/login");
@@ -60,8 +62,8 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
     } catch (error) {
       console.error("Logout error:", error);
       toast({
-        title: "Logout error",
-        description: error instanceof Error ? error.message : "Failed to logout",
+        title: t("sidebar.logoutError"),
+        description: error instanceof Error ? error.message : t("common.error"),
         variant: "destructive",
       });
     } finally {
@@ -74,7 +76,7 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
       <div className="p-2 sm:p-4 flex items-center justify-between border-b gap-2">
         {open && (
           <h2 className="text-base sm:text-lg font-semibold text-sidebar-foreground truncate">
-            Invoice App
+            {t("common.invoiceApp")}
           </h2>
         )}
         <SidebarTrigger className="h-8 w-8 sm:h-10 sm:w-10">
@@ -85,7 +87,7 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
       <SidebarContent className="flex-1">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs sm:text-sm px-2 sm:px-4">
-            {userRole === "admin" ? "Admin" : "Dashboard"}
+            {userRole === "admin" ? t("dashboard.adminNavigation") : t("dashboard.navigation")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -118,7 +120,7 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
           <LogOut className="h-4 w-4 sm:h-5 sm:w-5 mr-0 sm:mr-2 flex-shrink-0" />
           {open && (
             <span className="hidden sm:inline ml-2">
-              {isLoggingOut ? "Logging out..." : "Logout"}
+              {isLoggingOut ? t("sidebar.loggingOut") : t("common.logout")}
             </span>
           )}
         </Button>

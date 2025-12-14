@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Menu } from "lucide-react";
@@ -11,12 +12,13 @@ interface DashboardLayoutProps {
 }
 
 const MobileHeader = () => {
+  const { t } = useTranslation();
   const { toggleSidebar } = useSidebar();
 
   return (
     <div className="sm:hidden sticky top-0 z-40 bg-white border-b">
       <div className="flex items-center justify-between p-3 sm:p-4">
-        <h1 className="text-base font-semibold text-foreground">Invoice App</h1>
+        <h1 className="text-base font-semibold text-foreground">{t("common.invoiceApp")}</h1>
         <button
           onClick={toggleSidebar}
           className="p-2 hover:bg-muted rounded-md transition-colors"

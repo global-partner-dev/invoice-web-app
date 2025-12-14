@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
@@ -20,6 +21,7 @@ interface SubscriptionPlansProps {
 }
 
 export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
+  const { t } = useTranslation();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -33,8 +35,8 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
         setPlans(data);
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to load subscription plans",
+          title: t("common.error"),
+          description: t("subscriptionPlans.failedLoadPlans"),
           variant: "destructive",
         });
       } finally {
@@ -48,8 +50,8 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
   const handleSelectPlan = async (plan: Plan) => {
     if (!email) {
       toast({
-        title: "Error",
-        description: "Please enter your email first",
+        title: t("common.error"),
+        description: t("subscriptionPlans.emailRequired"),
         variant: "destructive",
       });
       return;
@@ -70,15 +72,15 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
         window.location.href = url;
       } else {
         toast({
-          title: "Error",
-          description: "Failed to create checkout session",
+          title: t("common.error"),
+          description: t("subscriptionPlans.failedCheckout"),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create checkout session",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("subscriptionPlans.failedCheckout"),
         variant: "destructive",
       });
     } finally {
@@ -90,7 +92,7 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8 sm:py-12">
-        <p className="text-sm sm:text-base text-muted-foreground">Loading subscription plans...</p>
+        <p className="text-sm sm:text-base text-muted-foreground">{t("subscriptionPlans.loadingPlans")}</p>
       </div>
     );
   }
@@ -110,7 +112,7 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
           </CardHeader>
           <CardContent className="flex-1 space-y-4 sm:space-y-6 px-4 sm:px-6">
             <div className="space-y-3">
-              <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">Features</h4>
+              <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">{t("subscriptionPlans.features")}</h4>
               <ul className="space-y-2">
                 {(plan.features || []).map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
@@ -126,7 +128,7 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
               onClick={() => handleSelectPlan(plan)}
               disabled={isCheckingOut && selectedPlan === plan.id}
             >
-              {isCheckingOut && selectedPlan === plan.id ? "Processing..." : "Subscribe"}
+              {isCheckingOut && selectedPlan === plan.id ? t("subscriptionPlans.processingButton") : t("common.subscribe")}
             </Button>
           </CardContent>
         </Card>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ interface SubscriptionInfo {
 }
 
 const Users = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -80,12 +82,12 @@ const Users = () => {
       setOpenEditDialog(false);
       setSelectedUser(null);
       setEditFormData({ full_name: "", email: "", phone_number: "" });
-      toast({ title: "Success", description: "User updated successfully" });
+      toast({ title: t("common.success"), description: t("users.updateSuccess") });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update user",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("users.updateFailed"),
         variant: "destructive",
       });
     },
@@ -95,12 +97,12 @@ const Users = () => {
     mutationFn: (userId: string) => deleteUserAsAdmin(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast({ title: "Success", description: "User deleted successfully" });
+      toast({ title: t("common.success"), description: t("users.deleteSuccess") });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete user",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("users.deleteFailed"),
         variant: "destructive",
       });
     },
@@ -133,14 +135,14 @@ const Users = () => {
 
   const handleUpdateUser = async () => {
     if (!editFormData.full_name || !editFormData.email || !editFormData.phone_number) {
-      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("users.allFieldsRequired"), variant: "destructive" });
       return;
     }
     updateUserMutation.mutate(editFormData);
   };
 
   const handleDeleteUser = (userId: string) => {
-    if (confirm("Are you sure you want to delete this user?")) {
+    if (confirm(t("users.confirmDelete"))) {
       deleteUserMutation.mutate(userId);
     }
   };
@@ -150,18 +152,18 @@ const Users = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div>
-            <h1 className="text-4xl font-bold">User Management</h1>
+            <h1 className="text-4xl font-bold">{t("users.title")}</h1>
             <p className="text-muted-foreground mt-2">
-              Manage and monitor all registered users
+              {t("users.subtitle")}
             </p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>All Users</CardTitle>
+            <CardTitle>{t("users.allUsers")}</CardTitle>
             <CardDescription>
-              View and manage user accounts and subscriptions
+              {t("users.allUsersDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -169,7 +171,7 @@ const Users = () => {
               <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-lg flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <p className="text-red-700">Failed to load users. Please try again later.</p>
+                  <p className="text-red-700">{t("users.failedLoadUsers")}</p>
                 </div>
                 <p className="text-red-600 text-sm font-mono">{error instanceof Error ? error.message : String(error)}</p>
               </div>
@@ -179,7 +181,7 @@ const Users = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder={t("users.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -192,12 +194,12 @@ const Users = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone Number</TableHead>
-                    <TableHead>Subscription Plan</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("users.columnName")}</TableHead>
+                    <TableHead>{t("users.columnEmail")}</TableHead>
+                    <TableHead>{t("users.columnPhone")}</TableHead>
+                    <TableHead>{t("users.columnPlan")}</TableHead>
+                    <TableHead>{t("users.columnCreated")}</TableHead>
+                    <TableHead className="text-right">{t("users.columnActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -206,7 +208,7 @@ const Users = () => {
                       <TableCell colSpan={6} className="text-center py-8">
                         <div className="flex justify-center items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-muted-foreground">Loading users...</span>
+                          <span className="text-muted-foreground">{t("users.loadingUsers")}</span>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -222,7 +224,7 @@ const Users = () => {
                             {subInfo?.plan_name ? (
                               <Badge variant="outline">{subInfo.plan_name}</Badge>
                             ) : (
-                              <span className="text-muted-foreground text-sm">No Plan</span>
+                              <span className="text-muted-foreground text-sm">{t("users.noPlan")}</span>
                             )}
                           </TableCell>
                           <TableCell>{formatDate(user.created_at)}</TableCell>
@@ -251,7 +253,7 @@ const Users = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {searchQuery ? "No users match your search" : "No users found"}
+                        {searchQuery ? t("users.noMatchSearch") : t("users.noUsers")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -264,35 +266,35 @@ const Users = () => {
         <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
+              <DialogTitle>{t("users.editUserTitle")}</DialogTitle>
               <DialogDescription>
-                Update user information
+                {t("users.editUserDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Full Name</label>
+                <label className="text-sm font-medium">{t("users.labelFullName")}</label>
                 <Input
                   value={editFormData.full_name}
                   onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
-                  placeholder="John Doe"
+                  placeholder={t("users.placeholderFullName")}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">{t("users.labelEmail")}</label>
                 <Input
                   type="email"
                   value={editFormData.email}
                   onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                  placeholder="john@example.com"
+                  placeholder={t("users.placeholderEmail")}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Phone Number</label>
+                <label className="text-sm font-medium">{t("users.labelPhone")}</label>
                 <Input
                   value={editFormData.phone_number}
                   onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
-                  placeholder="+1234567890"
+                  placeholder={t("users.placeholderPhone")}
                 />
               </div>
             </div>
@@ -301,13 +303,13 @@ const Users = () => {
                 variant="outline"
                 onClick={() => setOpenEditDialog(false)}
               >
-                Cancel
+                {t("users.buttonCancel")}
               </Button>
               <Button
                 onClick={handleUpdateUser}
                 disabled={updateUserMutation.isPending}
               >
-                {updateUserMutation.isPending ? "Updating..." : "Update User"}
+                {updateUserMutation.isPending ? t("users.buttonUpdating") : t("users.buttonUpdate")}
               </Button>
             </DialogFooter>
           </DialogContent>

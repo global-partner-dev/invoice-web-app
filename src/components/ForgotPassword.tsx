@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ interface ForgotPasswordProps {
 }
 
 const ForgotPassword = ({ open, onOpenChange }: ForgotPasswordProps) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -29,8 +31,8 @@ const ForgotPassword = ({ open, onOpenChange }: ForgotPasswordProps) => {
 
     if (!email) {
       toast({
-        title: "Error",
-        description: "Please enter your email address",
+        title: t("common.error"),
+        description: t("forgotPassword.enterEmailAddress"),
         variant: "destructive",
       });
       return;
@@ -41,14 +43,14 @@ const ForgotPassword = ({ open, onOpenChange }: ForgotPasswordProps) => {
       await resetPasswordForEmail(email);
       setIsSuccess(true);
       toast({
-        title: "Success",
-        description: "Check your email for password reset instructions",
+        title: t("common.success"),
+        description: t("forgotPassword.checkEmail"),
       });
     } catch (error) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description:
-          error instanceof Error ? error.message : "Failed to send reset email",
+          error instanceof Error ? error.message : t("forgotPassword.failedSendReset"),
         variant: "destructive",
       });
     } finally {
@@ -71,35 +73,35 @@ const ForgotPassword = ({ open, onOpenChange }: ForgotPasswordProps) => {
           <div className="flex flex-col items-center gap-4 py-6">
             <CheckCircle className="h-12 w-12 text-green-600" />
             <DialogHeader className="space-y-2">
-              <DialogTitle className="text-center">Check Your Email</DialogTitle>
+              <DialogTitle className="text-center">{t("forgotPassword.checkEmail")}</DialogTitle>
               <DialogDescription className="text-center">
-                We've sent a password reset link to <strong>{email}</strong>. Check your inbox and follow the instructions to reset your password.
+                {t("forgotPassword.sentLink", { email })}
               </DialogDescription>
             </DialogHeader>
             <Button
               onClick={() => handleOpenChange(false)}
               className="w-full"
             >
-              Done
+              {t("common.done")}
             </Button>
           </div>
         ) : (
           <div className="gap-4">
             <DialogHeader className="space-y-2">
-              <DialogTitle>Reset Password</DialogTitle>
+              <DialogTitle>{t("forgotPassword.resetPassword")}</DialogTitle>
               <DialogDescription>
-                Enter your email address and we'll send you a link to reset your password.
+                {t("forgotPassword.enterEmail")}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="reset-email">Email</Label>
+                <Label htmlFor="reset-email">{t("forgotPassword.emailPlaceholder")}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="reset-email"
                     type="email"
-                    placeholder="john@example.com"
+                    placeholder={t("forgotPassword.emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
@@ -113,7 +115,7 @@ const ForgotPassword = ({ open, onOpenChange }: ForgotPasswordProps) => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? t("forgotPassword.sending") : t("forgotPassword.sendResetLink")}
               </Button>
             </form>
           </div>

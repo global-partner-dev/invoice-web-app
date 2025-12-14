@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -36,6 +37,7 @@ export function UsageStats({
   planName,
   subscriptionId,
 }: UsageStatsProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isLoadingTopups, setIsLoadingTopups] = useState(true);
   const [activeTopups, setActiveTopups] = useState<Topup[]>([]);
@@ -102,8 +104,8 @@ export function UsageStats({
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to initiate recharge",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("usageStats.failedRecharge"),
         variant: "destructive",
       });
     } finally {
@@ -121,8 +123,8 @@ export function UsageStats({
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to initiate topup purchase",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("usageStats.failedTopup"),
         variant: "destructive",
       });
     } finally {
@@ -142,8 +144,8 @@ export function UsageStats({
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Invoice Usage</CardTitle>
-              <CardDescription>{planName} Plan</CardDescription>
+              <CardTitle>{t("usageStats.title")}</CardTitle>
+              <CardDescription>{planName} {t("usageStats.plan")}</CardDescription>
             </div>
           </div>
           {hasReachedLimit && <AlertCircle className="h-5 w-5 text-red-500" />}
@@ -152,10 +154,10 @@ export function UsageStats({
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
-            {availableInvoices} available ({invoiceLimit} plan {totalTopupInvoices > 0 ? `+ ${totalTopupInvoices} topup` : ""})
+            {availableInvoices} {t("usageStats.available")} ({invoiceLimit} {t("usageStats.plan")} {totalTopupInvoices > 0 ? `+ ${totalTopupInvoices} ${t("usageStats.topup")}` : ""})
           </span>
           <span className="text-sm text-muted-foreground">
-            {invoiceLimit > 0 ? `${Math.round(usagePercentage)}% used` : "N/A"}
+            {invoiceLimit > 0 ? `${Math.round(usagePercentage)}% ${t("usageStats.used")}` : t("usageStats.notAvailable")}
           </span>
         </div>
 
@@ -165,8 +167,8 @@ export function UsageStats({
           <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-md">
             <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-red-900">No Invoices Available</p>
-              <p className="text-xs text-red-700">Purchase a top-up to continue generating invoices.</p>
+              <p className="text-sm font-medium text-red-900">{t("usageStats.noInvoices")}</p>
+              <p className="text-xs text-red-700">{t("usageStats.noInvoicesDesc")}</p>
             </div>
           </div>
         )}
@@ -176,12 +178,12 @@ export function UsageStats({
             {isRechargingLoading ? (
               <>
                 <TrendingUp className="h-4 w-4 mr-2 animate-spin" />
-                Processing...
+                {t("common.processing")}
               </>
             ) : (
               <>
                 <TrendingUp className="h-4 w-4 mr-2" />
-                {isFreeUser ? "Upgrade to Basic Plan" : "Upgrade Plan"}
+                {isFreeUser ? t("usageStats.upgradeBasic") : t("usageStats.upgradePlan")}
               </>
             )}
           </Button>
@@ -189,7 +191,7 @@ export function UsageStats({
 
         {!isLoadingTopups && relevantTopups.length > 0 && (
           <div className="space-y-2 pt-2 border-t">
-            <h4 className="text-xs font-semibold text-muted-foreground">Quick Top-up</h4>
+            <h4 className="text-xs font-semibold text-muted-foreground">{t("usageStats.quickTopup")}</h4>
             <div className="grid grid-cols-1 gap-2">
               {relevantTopups.map(product => (
                 <Button
@@ -201,7 +203,7 @@ export function UsageStats({
                   disabled={isTopupLoading}
                 >
                   <Package className="h-3 w-3 mr-2" />
-                  +{product.invoice_count} for {product.price} pesos
+                  +{product.invoice_count} {t("usageStats.forPesos")} {product.price} pesos
                 </Button>
               ))}
             </div>
@@ -211,7 +213,7 @@ export function UsageStats({
         {!hasReachedLimit && (
           <div className="p-2 bg-green-50 border border-green-200 rounded-md">
             <p className="text-xs text-green-700">
-              You have {availableInvoices} invoice{availableInvoices !== 1 ? "s" : ""} available.
+              {t("usageStats.youHaveAvailable", { count: availableInvoices, pluralized: availableInvoices !== 1 ? t("usageStats.invoices") : t("usageStats.invoice") })}
             </p>
           </div>
         )}

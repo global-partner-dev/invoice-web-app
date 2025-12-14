@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ interface ActiveTopup {
 const Subscriptions = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [subscriptionUsage, setSubscriptionUsage] = useState<{
     subscriptionId: string | null;
@@ -76,8 +78,8 @@ const Subscriptions = () => {
       } catch (error) {
         console.error("Error fetching subscription data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load subscription information",
+          title: t("common.error"),
+          description: t("subscriptions.failedLoadInfo"),
           variant: "destructive",
         });
       } finally {
@@ -86,7 +88,7 @@ const Subscriptions = () => {
     };
 
     fetchData();
-  }, [user, toast]);
+  }, [user, toast, t]);
 
   const handleSubscribeNow = async () => {
     if (!user?.email) return;
@@ -97,8 +99,8 @@ const Subscriptions = () => {
 
       if (plans.length === 0) {
         toast({
-          title: "Error",
-          description: "No subscription plans available",
+          title: t("common.error"),
+          description: t("subscriptions.noPlansAvailable"),
           variant: "destructive",
         });
         return;
@@ -113,8 +115,8 @@ const Subscriptions = () => {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create checkout session",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("subscriptions.failedCheckout"),
         variant: "destructive",
       });
     } finally {
@@ -137,8 +139,8 @@ const Subscriptions = () => {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create topup session",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("subscriptions.failedTopup"),
         variant: "destructive",
       });
     } finally {
@@ -159,7 +161,7 @@ const Subscriptions = () => {
     return (
       <DashboardLayout isLinkedUser={isLinkedUser}>
         <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading subscription information...</p>
+          <p className="text-muted-foreground">{t("subscriptions.loadingInfo")}</p>
         </div>
       </DashboardLayout>
     );
@@ -169,8 +171,8 @@ const Subscriptions = () => {
     <DashboardLayout isLinkedUser={isLinkedUser}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-          <p className="text-muted-foreground">Manage your subscription and purchase additional invoices</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("subscriptions.title")}</h1>
+          <p className="text-muted-foreground">{t("subscriptions.subtitle")}</p>
         </div>
 
         {/* Current Subscription Status */}
@@ -178,11 +180,11 @@ const Subscriptions = () => {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle>Current Subscription</CardTitle>
-                <CardDescription>Your active subscription plan and usage</CardDescription>
+                <CardTitle>{t("subscriptions.currentSubscription")}</CardTitle>
+                <CardDescription>{t("subscriptions.currentSubscriptionDesc")}</CardDescription>
               </div>
               <Badge variant={subscriptionUsage?.status === "active" ? "default" : "secondary"}>
-                {subscriptionUsage?.status === "active" ? "Active" : "Inactive"}
+                {subscriptionUsage?.status === "active" ? t("subscriptions.statusActive") : t("subscriptions.statusInactive")}
               </Badge>
             </div>
           </CardHeader>
@@ -190,19 +192,19 @@ const Subscriptions = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Plan Name */}
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Plan</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("subscriptions.plan")}</p>
                 <p className="text-2xl font-bold">{subscriptionUsage?.planName || "Free"}</p>
               </div>
 
               {/* Invoice Limit */}
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Invoice Limit</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("subscriptions.invoiceLimit")}</p>
                 <p className="text-2xl font-bold">{subscriptionUsage?.invoiceLimit || "2"}</p>
               </div>
 
               {/* Available Invoices */}
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Available Invoices</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("subscriptions.availableInvoices")}</p>
                 <div className="flex items-baseline gap-2">
                   <p
                     className={`text-2xl font-bold ${
@@ -225,12 +227,12 @@ const Subscriptions = () => {
             {subscriptionUsage && (subscriptionUsage.invoiceLimit > 0 || subscriptionUsage.planName === "Free") && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">Available</span>
+                  <span className="font-medium">{t("subscriptions.available")}</span>
                   <span className="text-muted-foreground">
                     {subscriptionUsage.planName === "Free"
                       ? subscriptionUsage.invoiceLimit - subscriptionUsage.availableInvoices
                       : subscriptionUsage.availableInvoices}{" "}
-                    of {subscriptionUsage.invoiceLimit || 2}
+                    {t("subscriptions.of")} {subscriptionUsage.invoiceLimit || 2}
                   </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
@@ -261,16 +263,16 @@ const Subscriptions = () => {
                   className="w-full md:w-fit"
                   size="lg"
                 >
-                  {isCheckingOut ? "Processing..." : "Subscribe Now"}
+                  {isCheckingOut ? t("subscriptions.processing") : t("subscriptions.subscribeNow")}
                 </Button>
               )}
               {isLimitReached && (
                 <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Invoice limit reached</p>
+                    <p className="font-medium text-sm">{t("subscriptions.limitReached")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Purchase additional invoices or upgrade your plan to continue creating invoices.
+                      {t("subscriptions.limitReachedDesc")}
                     </p>
                   </div>
                 </div>
@@ -283,8 +285,8 @@ const Subscriptions = () => {
         {activeTopups.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Active Add-ons</CardTitle>
-              <CardDescription>Your active invoice topups</CardDescription>
+              <CardTitle>{t("subscriptions.activeAddons")}</CardTitle>
+              <CardDescription>{t("subscriptions.activeAddonsDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -298,11 +300,11 @@ const Subscriptions = () => {
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>Expires: {new Date(topup.expires_at).toLocaleDateString()}</span>
+                          <span>{t("subscriptions.expires")}: {new Date(topup.expires_at).toLocaleDateString()}</span>
                         </div>
                         <div>
                           <span>
-                            {topup.invoice_count - topup.used_count} of {topup.invoice_count} invoices
+                            {topup.invoice_count - topup.used_count} {t("subscriptions.of")} {topup.invoice_count} {t("subscriptions.invoices")}
                           </span>
                         </div>
                       </div>
@@ -318,8 +320,8 @@ const Subscriptions = () => {
         {topupProducts.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Buy More Invoices</CardTitle>
-              <CardDescription>Purchase additional invoices for your account</CardDescription>
+              <CardTitle>{t("subscriptions.buyMoreInvoices")}</CardTitle>
+              <CardDescription>{t("subscriptions.buyMoreInvoicesDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -345,10 +347,10 @@ const Subscriptions = () => {
                     <p className="text-sm text-muted-foreground mb-2">{product.description}</p>
                     <div className="flex items-baseline gap-2 mb-4">
                       <p className="text-2xl font-bold">{product.invoice_count}</p>
-                      <p className="text-muted-foreground">invoices</p>
+                      <p className="text-muted-foreground">{t("subscriptions.invoices")}</p>
                     </div>
                     <div className="text-lg font-semibold mb-4">
-                      MX${(product.price).toFixed(2)}
+                      {t("subscriptions.price")}{(product.price).toFixed(2)}
                     </div>
                     <Button
                       onClick={() => handleBuyMore(product.id)}
@@ -356,11 +358,11 @@ const Subscriptions = () => {
                       className="w-full mt-auto"
                     >
                       {isCheckingOut && selectedTopup === product.id ? (
-                        "Processing..."
+                        t("subscriptions.processing")
                       ) : (
                         <>
                           <ShoppingCart className="w-4 h-4 mr-2" />
-                          Buy Now
+                          {t("subscriptions.buyNow")}
                         </>
                       )}
                     </Button>

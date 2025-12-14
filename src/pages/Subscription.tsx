@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { signupWithEmail, validatePassword, loginWithEmail } from "@/lib/api";
 import { normalizePhoneNumber } from "@/lib/utils";
 
 const Subscription = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -36,8 +38,8 @@ const Subscription = () => {
 
     if (cooldownSeconds > 0) {
       toast({
-        title: "Please wait",
-        description: `Try again in ${cooldownSeconds} seconds`,
+        title: t("signup.errorWaitSeconds"),
+        description: t("signup.errorTryAgainSeconds", { seconds: cooldownSeconds }),
         variant: "destructive",
       });
       return;
@@ -45,8 +47,8 @@ const Subscription = () => {
 
     if (!email || !fullName || !password || !confirmPassword) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: t("common.error"),
+        description: t("signup.errorFillFields"),
         variant: "destructive",
       });
       return;
@@ -55,7 +57,7 @@ const Subscription = () => {
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
       toast({
-        title: "Password Error",
+        title: t("signup.errorPasswordError"),
         description: passwordValidation.error,
         variant: "destructive",
       });
@@ -64,8 +66,8 @@ const Subscription = () => {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match",
+        title: t("common.error"),
+        description: t("signup.errorPasswordNoMatch"),
         variant: "destructive",
       });
       return;
@@ -92,13 +94,13 @@ const Subscription = () => {
         const seconds = match ? parseInt(match[1]) : 60;
         setCooldownSeconds(seconds);
         toast({
-          title: "Too many attempts",
-          description: `Please wait ${seconds} seconds before trying again`,
+          title: t("signup.errorTooManyAttempts"),
+          description: t("signup.errorTryAgain", { seconds }),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Signup Error",
+          title: t("signup.errorSignupFailed"),
           description: errorMessage,
           variant: "destructive",
         });
@@ -117,28 +119,28 @@ const Subscription = () => {
           onClick={() => navigate("/login")}
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Back to Login</span>
-          <span className="sm:hidden">Back</span>
+          <span className="hidden sm:inline">{t("signup.backToLogin")}</span>
+          <span className="sm:hidden">{t("signup.back")}</span>
         </Button>
 
         {step === 1 ? (
           <Card className="w-full shadow-elegant">
             <CardHeader className="space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
-              <CardTitle className="text-2xl sm:text-3xl font-bold text-center">Create Account</CardTitle>
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-center">{t("signup.title")}</CardTitle>
               <CardDescription className="text-center text-sm sm:text-base">
-                Sign up to subscribe to a plan
+                {t("signup.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               <form onSubmit={handleSignup} className="space-y-3 sm:space-y-4 max-w-md mx-auto">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-sm sm:text-base">Full Name</Label>
+                  <Label htmlFor="fullName" className="text-sm sm:text-base">{t("signup.labelFullName")}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="fullName"
                       type="text"
-                      placeholder="John Doe"
+                      placeholder={t("signup.placeholderFullName")}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
@@ -149,13 +151,13 @@ const Subscription = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
+                  <Label htmlFor="email" className="text-sm sm:text-base">{t("signup.labelEmail")}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="john@example.com"
+                      placeholder={t("signup.placeholderEmail")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
@@ -166,13 +168,13 @@ const Subscription = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm sm:text-base">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-sm sm:text-base">{t("signup.labelPhone")}</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="52 1 722 101 5653"
+                      placeholder={t("signup.placeholderPhone")}
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
@@ -180,19 +182,19 @@ const Subscription = () => {
                       required
                     />
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Any format accepted (e.g. +52 1 722 101 5653, 52 1 722 101 5653)
+                      {t("signup.phoneFormat")}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
+                  <Label htmlFor="password" className="text-sm sm:text-base">{t("signup.labelPassword")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="Enter password"
+                      placeholder={t("signup.placeholderPassword")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
@@ -201,18 +203,18 @@ const Subscription = () => {
                     />
                   </div>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Min 8 chars, uppercase letter, number, special character
+                    {t("signup.passwordRequirements")}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm sm:text-base">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-sm sm:text-base">{t("signup.labelConfirmPassword")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="Confirm password"
+                      placeholder={t("signup.placeholderConfirmPassword")}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-10 h-10 sm:h-11 text-sm sm:text-base"
@@ -223,13 +225,13 @@ const Subscription = () => {
                 </div>
 
                 <Button type="submit" className="w-full h-10 sm:h-11 text-sm sm:text-base" disabled={isLoading || cooldownSeconds > 0}>
-                  {isLoading ? "Creating Account..." : cooldownSeconds > 0 ? `Wait ${cooldownSeconds}s` : "Continue to Plans"}
+                  {isLoading ? t("signup.buttonCreating") : cooldownSeconds > 0 ? t("signup.buttonWait", { seconds: cooldownSeconds }) : t("signup.buttonContinue")}
                 </Button>
 
                 <div className="text-center text-xs sm:text-sm text-muted-foreground">
-                  Already have an account?{" "}
+                  {t("signup.haveAccount")}{" "}
                   <a href="/login" className="text-primary hover:underline font-medium">
-                    Login here
+                    {t("signup.loginLink")}
                   </a>
                 </div>
               </form>
@@ -238,9 +240,9 @@ const Subscription = () => {
         ) : (
           <Card className="w-full shadow-elegant">
             <CardHeader className="space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
-              <CardTitle className="text-2xl sm:text-3xl font-bold text-center">Choose Your Plan</CardTitle>
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-center">{t("signup.planTitle")}</CardTitle>
               <CardDescription className="text-center text-sm sm:text-base">
-                Welcome {fullName}! Select a subscription plan to get started
+                {t("signup.planSubtitle", { name: fullName })}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6">
@@ -259,7 +261,7 @@ const Subscription = () => {
                     setConfirmPassword("");
                   }}
                 >
-                  Back
+                  {t("signup.buttonBack")}
                 </Button>
               </div>
             </CardContent>

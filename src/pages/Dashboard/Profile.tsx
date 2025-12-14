@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ClientsManagement } from "@/components/ClientsManagement";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +72,7 @@ const MAX_UPLOAD_FILE_SIZE = 10 * 1024 * 1024;
 const allowedUploadMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/jpg"]);
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -179,8 +181,8 @@ const Profile = () => {
       
       if (!email) {
         toast({
-          title: "Verification failed",
-          description: "Unable to verify subscription: email not found",
+          title: t("profile.toastVerifyFailed"),
+          description: t("profile.toastVerifyFailedDesc"),
           variant: "destructive",
         });
         // Clean up URL
@@ -200,12 +202,12 @@ const Profile = () => {
         setSearchParams(searchParams, { replace: true });
 
         toast({
-          title: "Subscription activated!",
-          description: `Your ${result.subscription?.plan || "subscription"} is now active.`,
+          title: t("profile.toastSubscriptionActive"),
+          description: t("profile.toastSubscriptionActiveDesc", { plan: result.subscription?.plan || "subscription" }),
         });
       } catch (error) {
         toast({
-          title: "Subscription verification failed",
+          title: t("profile.toastSubscriptionVerifyFailed"),
           description: getErrorMessage(error),
           variant: "destructive",
         });
@@ -282,7 +284,7 @@ const Profile = () => {
       } catch (error) {
         if (active) {
           toast({
-            title: "Failed to load profile",
+            title: t("profile.toastFailedSave"),
             description: getErrorMessage(error),
             variant: "destructive",
           });
@@ -323,8 +325,8 @@ const Profile = () => {
     e.preventDefault();
     if (!user?.id) {
       toast({
-        title: "Failed to save profile",
-        description: "You must be signed in to update your profile.",
+        title: t("profile.toastFailedSave"),
+        description: t("profile.toastNotSignedIn"),
         variant: "destructive",
       });
       return;
@@ -375,12 +377,12 @@ const Profile = () => {
       });
 
       toast({
-        title: "Profile saved",
-        description: "Your profile information has been updated successfully.",
+        title: t("profile.toastProfileSaved"),
+        description: t("profile.toastProfileSavedDesc"),
       });
     } catch (error) {
       toast({
-        title: "Failed to save profile",
+        title: t("profile.toastFailedSave"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -424,8 +426,8 @@ const Profile = () => {
 
     if (!isAllowed) {
       toast({
-        title: "Unsupported file",
-        description: "Please upload a PDF, PNG, or JPG file.",
+        title: t("profile.toastUnsupported"),
+        description: t("profile.toastUnsupportedDesc"),
         variant: "destructive",
       });
       return;
@@ -433,8 +435,8 @@ const Profile = () => {
 
     if (file.size > MAX_UPLOAD_FILE_SIZE) {
       toast({
-        title: "File too large",
-        description: "Please choose a file under 10MB.",
+        title: t("profile.toastFileTooLarge"),
+        description: t("profile.toastFileTooLargeDesc"),
         variant: "destructive",
       });
       return;
@@ -444,16 +446,16 @@ const Profile = () => {
     setExtractedProfile(null);
 
     toast({
-      title: "Document ready",
-      description: `${file.name} selected. Click Send to process with OCR.`,
+      title: t("profile.toastDocumentReady"),
+      description: t("profile.toastDocumentReadyDesc", { fileName: file.name }),
     });
   };
 
   const handleSendDocument = async () => {
     if (!selectedFile) {
       toast({
-        title: "No document selected",
-        description: "Please choose a file before sending.",
+        title: t("profile.toastNoDocument"),
+        description: t("profile.toastNoDocumentDesc"),
         variant: "destructive",
       });
       return;
@@ -466,12 +468,12 @@ const Profile = () => {
       const normalized = mapExtractionToProfile(extracted);
       setExtractedProfile(normalized);
       toast({
-        title: "Extraction complete",
-        description: "Review the extracted information before applying.",
+        title: t("profile.toastExtractionComplete"),
+        description: t("profile.toastExtractionCompleteDesc"),
       });
     } catch (error) {
       toast({
-        title: "Extraction failed",
+        title: t("profile.toastExtractionFailed"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -483,8 +485,8 @@ const Profile = () => {
   const handleApplyExtracted = () => {
     if (!extractedProfile) {
       toast({
-        title: "No extracted data",
-        description: "Send a document to extract information first.",
+        title: t("profile.toastNoExtracted"),
+        description: t("profile.toastNoExtractedDesc"),
         variant: "destructive",
       });
       return;
@@ -508,8 +510,8 @@ const Profile = () => {
     }));
 
     toast({
-      title: "Fields updated",
-      description: "Extracted values have been applied. Review and save your profile.",
+      title: t("profile.toastFieldsUpdated"),
+      description: t("profile.toastFieldsUpdatedDesc"),
     });
   };
 
@@ -527,8 +529,8 @@ const Profile = () => {
 
     if (!isValidCert && !isValidKey) {
       toast({
-        title: "Invalid file",
-        description: type === "cert" ? "Certificate must be .cer or .pem format" : "Key must be .key or .pem format",
+        title: t("profile.toastInvalidFile"),
+        description: type === "cert" ? t("profile.toastCertInvalid") : t("profile.toastKeyInvalid"),
         variant: "destructive",
       });
       return;
@@ -536,8 +538,8 @@ const Profile = () => {
 
     if (file.size > MAX_UPLOAD_FILE_SIZE) {
       toast({
-        title: "File too large",
-        description: "Please choose a file under 10MB.",
+        title: t("profile.toastFileTooLarge"),
+        description: t("profile.toastFileTooLargeDesc"),
         variant: "destructive",
       });
       return;
@@ -553,8 +555,8 @@ const Profile = () => {
   const handleUploadCertificate = async () => {
     if (!selectedCertFile || !selectedKeyFile) {
       toast({
-        title: "Missing files",
-        description: "Please select both certificate (.cer) and key (.key) files.",
+        title: t("profile.toastMissingFiles"),
+        description: t("profile.toastMissingFilesDesc"),
         variant: "destructive",
       });
       return;
@@ -562,8 +564,8 @@ const Profile = () => {
 
     if (!certificatePassphrase.trim()) {
       toast({
-        title: "Missing passphrase",
-        description: "Please enter the certificate passphrase.",
+        title: t("profile.toastMissingPassphrase"),
+        description: t("profile.toastMissingPassphraseDesc"),
         variant: "destructive",
       });
       return;
@@ -571,8 +573,8 @@ const Profile = () => {
 
     if (!user?.id) {
       toast({
-        title: "Error",
-        description: "User not authenticated.",
+        title: t("common.error"),
+        description: t("profile.toastUserNotAuth"),
         variant: "destructive",
       });
       return;
@@ -595,12 +597,12 @@ const Profile = () => {
       }
 
       toast({
-        title: "Certificate uploaded",
-        description: "Your certificate and key have been uploaded successfully.",
+        title: t("profile.toastCertUploaded"),
+        description: t("profile.toastCertUploadedDesc"),
       });
     } catch (error) {
       toast({
-        title: "Upload failed",
+        title: t("profile.toastUploadFailed"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -612,8 +614,8 @@ const Profile = () => {
   const handleDeleteCertificate = async () => {
     if (!user?.id) {
       toast({
-        title: "Error",
-        description: "User not authenticated.",
+        title: t("common.error"),
+        description: t("profile.toastUserNotAuth"),
         variant: "destructive",
       });
       return;
@@ -628,12 +630,12 @@ const Profile = () => {
       setSelectedKeyFile(null);
 
       toast({
-        title: "Certificate deleted",
-        description: "Your certificate and key have been removed.",
+        title: t("profile.toastCertDeleted"),
+        description: t("profile.toastCertDeletedDesc"),
       });
     } catch (error) {
       toast({
-        title: "Deletion failed",
+        title: t("profile.toastDeleteFailed"),
         description: getErrorMessage(error),
         variant: "destructive",
       });
@@ -645,15 +647,15 @@ const Profile = () => {
   return (
     <DashboardLayout userRole="user" isLinkedUser={isLinkedUser}>
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">Taxpayer Profile</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8">{t("profile.title")}</h1>
 
         <Tabs defaultValue="details" className="space-y-4 sm:space-y-6">
           <TabsList className={`grid w-full ${isPremium ? "grid-cols-4" : "grid-cols-3"} gap-2`}>
-            <TabsTrigger value="details" className="text-xs sm:text-sm">Profile Details</TabsTrigger>
-            <TabsTrigger value="upload" className="text-xs sm:text-sm">Upload Documents</TabsTrigger>
-            <TabsTrigger value="certificates" className="text-xs sm:text-sm">Certificates</TabsTrigger>
+            <TabsTrigger value="details" className="text-xs sm:text-sm">{t("profile.tabDetails")}</TabsTrigger>
+            <TabsTrigger value="upload" className="text-xs sm:text-sm">{t("profile.tabUpload")}</TabsTrigger>
+            <TabsTrigger value="certificates" className="text-xs sm:text-sm">{t("profile.tabCertificates")}</TabsTrigger>
             {isPremium && (
-              <TabsTrigger value="clients" className="text-xs sm:text-sm">Clients</TabsTrigger>
+              <TabsTrigger value="clients" className="text-xs sm:text-sm">{t("profile.tabClients")}</TabsTrigger>
             )}
           </TabsList>
 
@@ -661,47 +663,47 @@ const Profile = () => {
             <form onSubmit={handleSave} className="space-y-3">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Required Information *</CardTitle>
+                  <CardTitle className="text-lg">{t("profile.requiredInfo")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <InputField
-                      label="RFC"
+                      label={t("profile.labelRfc")}
                       value={profileData.required.rfc}
                       onChange={(value) => handleInputChange("required.rfc", value)}
                       placeholder={placeholders.rfc}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="Tax Regime"
+                      label={t("profile.labelTaxRegime")}
                       value={profileData.required.regimen}
                       onChange={(value) => handleInputChange("required.regimen", value)}
                       placeholder={placeholders.regimen}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="Name"
+                      label={t("profile.labelName")}
                       value={profileData.required.nombre}
                       onChange={(value) => handleInputChange("required.nombre", value)}
                       placeholder={placeholders.nombre}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="First Surname"
+                      label={t("profile.labelFirstSurname")}
                       value={profileData.required.primerApellido}
                       onChange={(value) => handleInputChange("required.primerApellido", value)}
                       placeholder={placeholders.primerApellido}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="Second Surname"
+                      label={t("profile.labelSecondSurname")}
                       value={profileData.required.segundoApellido}
                       onChange={(value) => handleInputChange("required.segundoApellido", value)}
                       placeholder={placeholders.segundoApellido}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="Postal Code"
+                      label={t("profile.labelPostalCode")}
                       value={profileData.required.codigoPostal}
                       onChange={(value) => handleInputChange("required.codigoPostal", value)}
                       placeholder={placeholders.codigoPostal}
@@ -713,26 +715,26 @@ const Profile = () => {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Optional Information</CardTitle>
+                  <CardTitle className="text-lg">{t("profile.optionalInfo")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <InputField
-                      label="CURP"
+                      label={t("profile.labelCurp")}
                       value={profileData.optional.curp}
                       onChange={(value) => handleInputChange("optional.curp", value)}
                       placeholder={placeholders.curp}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="Email"
+                      label={t("profile.labelEmail")}
                       value={profileData.optional.email}
                       onChange={(value) => handleInputChange("optional.email", value)}
                       placeholder={placeholders.email}
                       disabled={isFormDisabled}
                     />
                     <InputField
-                      label="Phone"
+                      label={t("profile.labelPhone")}
                       value={profileData.optional.phone}
                       onChange={(value) => handleInputChange("optional.phone", value)}
                       placeholder={placeholders.phone}
@@ -740,7 +742,7 @@ const Profile = () => {
                     />
                     <div className="sm:col-span-2">
                       <InputField
-                        label="Full Address"
+                        label={t("profile.labelAddress")}
                         value={profileData.optional.address}
                         onChange={(value) => handleInputChange("optional.address", value)}
                         placeholder={placeholders.address}
@@ -753,19 +755,19 @@ const Profile = () => {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Tax Configuration</CardTitle>
+                  <CardTitle className="text-lg">{t("profile.taxConfig")}</CardTitle>
                   <CardDescription className="text-sm">
-                    Configure how taxes are calculated for your invoices. In Mexico, prices typically include taxes.
+                    {t("profile.taxConfigDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="tax-inclusive" className="text-sm font-medium">
-                        Prices Include Taxes
+                        {t("profile.pricesIncludeTaxes")}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        When enabled, the amount you specify already includes taxes (standard in Mexico)
+                        {t("profile.pricesIncludeTaxesDesc")}
                       </p>
                     </div>
                     <Switch
@@ -779,10 +781,10 @@ const Profile = () => {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="apply-iva" className="text-sm font-medium">
-                        Apply IVA (VAT)
+                        {t("profile.applyIva")}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Enable if you need to apply Value Added Tax (IVA)
+                        {t("profile.applyIvaDesc")}
                       </p>
                     </div>
                     <Switch
@@ -796,7 +798,7 @@ const Profile = () => {
                   {taxConfig.apply_iva && (
                     <div className="pl-4 border-l-2 border-border">
                       <Label htmlFor="iva-rate" className="text-sm">
-                        IVA Rate (%)
+                        {t("profile.ivaRate")}
                       </Label>
                       <Input
                         id="iva-rate"
@@ -818,10 +820,10 @@ const Profile = () => {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="apply-isr" className="text-sm font-medium">
-                        Apply ISR (Income Tax)
+                        {t("profile.applyIsr")}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Enable if you need to apply Income Tax (ISR) - typically for professionals
+                        {t("profile.applyIsrDesc")}
                       </p>
                     </div>
                     <Switch
@@ -835,7 +837,7 @@ const Profile = () => {
                   {taxConfig.apply_isr && (
                     <div className="pl-4 border-l-2 border-border">
                       <Label htmlFor="isr-rate" className="text-sm">
-                        ISR Rate (%)
+                        {t("profile.isrRate")}
                       </Label>
                       <Input
                         id="isr-rate"
@@ -856,10 +858,10 @@ const Profile = () => {
 
                   <div className="mt-4 p-3 bg-muted rounded-md">
                     <p className="text-xs text-muted-foreground">
-                      <strong>Examples:</strong>
-                      <br />• Doctors: Disable both IVA and ISR
-                      <br />• Some professionals: Enable only ISR
-                      <br />• Businesses: Enable both IVA and ISR
+                      <strong>{t("profile.taxExamples")}:</strong>
+                      <br />• {t("profile.taxExampleDoctors")}
+                      <br />• {t("profile.taxExampleProfessionals")}
+                      <br />• {t("profile.taxExampleBusinesses")}
                     </p>
                   </div>
                 </CardContent>
@@ -867,7 +869,7 @@ const Profile = () => {
 
               <Button type="submit" className="w-full sm:w-auto" disabled={isFormDisabled}>
                 <Save className="mr-2 h-4 w-4" />
-                {isFetching ? "Loading..." : isLoading ? "Saving..." : "Save Profile"}
+                {isFetching ? t("profile.buttonLoading") : isLoading ? t("profile.buttonSaving") : t("profile.buttonSave")}
               </Button>
             </form>
           </TabsContent>
@@ -875,20 +877,20 @@ const Profile = () => {
           <TabsContent value="upload">
             <Card>
               <CardHeader>
-                <CardTitle>Upload Documents</CardTitle>
+                <CardTitle>{t("profile.uploadTitle")}</CardTitle>
                 <CardDescription>
-                  Upload images or PDFs to auto-fill invoice information with OCR
+                  {t("profile.uploadDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6">
                 <div className="border-2 border-dashed border-border rounded-lg p-6 sm:p-8 lg:p-12 text-center hover:border-primary transition-colors">
                   <Upload className="h-8 sm:h-10 lg:h-12 w-8 sm:w-10 lg:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
                   <Label htmlFor="file-upload" className="cursor-pointer block">
-                    <span className="text-primary font-medium text-sm sm:text-base">Click to upload</span>
-                    <span className="text-xs sm:text-sm"> or drag and drop</span>
+                    <span className="text-primary font-medium text-sm sm:text-base">{t("profile.uploadClickText")}</span>
+                    <span className="text-xs sm:text-sm"> {t("profile.uploadDragText")}</span>
                   </Label>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                    PDF, PNG, JPG up to 10MB
+                    {t("profile.uploadFileTypes")}
                   </p>
                   <Input
                     id="file-upload"
@@ -910,14 +912,14 @@ const Profile = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Button onClick={handleSendDocument} disabled={isSendingDocument}>
-                          {isSendingDocument ? "Sending..." : "Send"}
+                          {isSendingDocument ? t("profile.buttonSending") : t("profile.buttonSend")}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={handleApplyExtracted}
                           disabled={!extractedProfile || isSendingDocument}
                         >
-                          Apply
+                          {t("profile.buttonApply")}
                         </Button>
                       </div>
                     </div>
@@ -926,9 +928,9 @@ const Profile = () => {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <p className="text-xs font-semibold uppercase text-muted-foreground tracking-wide">
-                            Extracted Values
+                            {t("profile.extractedValues")}
                           </p>
-                          <span className="text-xs text-muted-foreground">Review before applying</span>
+                          <span className="text-xs text-muted-foreground">{t("profile.reviewBeforeApplying")}</span>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           {extractedPreviewEntries.map((item) => (
@@ -944,12 +946,12 @@ const Profile = () => {
                 )}
 
                 <div className="space-y-2 sm:space-y-3">
-                  <h3 className="font-medium text-sm sm:text-base">Supported Documents</h3>
+                  <h3 className="font-medium text-sm sm:text-base">{t("profile.supportedDocuments")}</h3>
                   <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                    <li>• Tax receipts and invoices</li>
-                    <li>• Business registration documents</li>
-                    <li>• RFC certificates</li>
-                    <li>• Address proofs</li>
+                    <li>• {t("profile.docTaxReceipts")}</li>
+                    <li>• {t("profile.docBusiness")}</li>
+                    <li>• {t("profile.docRfc")}</li>
+                    <li>• {t("profile.docAddress")}</li>
                   </ul>
                 </div>
               </CardContent>
@@ -959,9 +961,9 @@ const Profile = () => {
           <TabsContent value="certificates">
             <Card>
               <CardHeader>
-                <CardTitle>Digital Certificates</CardTitle>
+                <CardTitle>{t("profile.certificatesTitle")}</CardTitle>
                 <CardDescription>
-                  Upload your digital certificate (.cer) and private key (.key) for invoice signing
+                  {t("profile.certificatesDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6">
@@ -969,7 +971,7 @@ const Profile = () => {
                   <div className="space-y-4">
                     {profileData.required.rfc && (
                       <div className="rounded-lg border border-border/70 p-4">
-                        <p className="text-sm font-medium mb-2">RFC: {profileData.required.rfc}</p>
+                        <p className="text-sm font-medium mb-2">{t("profile.labelRfcDisplay")}: {profileData.required.rfc}</p>
                       </div>
                     )}
 
@@ -977,12 +979,12 @@ const Profile = () => {
                       <div className="space-y-3">
                         <div>
                           <Label htmlFor="cert-upload" className="text-sm font-medium mb-2 block">
-                            Certificate File (.cer or .pem)
+                            {t("profile.labelCertFile")}
                           </Label>
                           <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors">
                             <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
                             <Label htmlFor="cert-upload" className="cursor-pointer block">
-                              <span className="text-primary font-medium text-sm">Click to upload</span>
+                              <span className="text-primary font-medium text-sm">{t("profile.uploadClickText")}</span>
                             </Label>
                             <Input
                               id="cert-upload"
@@ -1004,12 +1006,12 @@ const Profile = () => {
                       <div className="space-y-3">
                         <div>
                           <Label htmlFor="key-upload" className="text-sm font-medium mb-2 block">
-                            Private Key File (.key or .pem)
+                            {t("profile.labelKeyFile")}
                           </Label>
                           <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors">
                             <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
                             <Label htmlFor="key-upload" className="cursor-pointer block">
-                              <span className="text-primary font-medium text-sm">Click to upload</span>
+                              <span className="text-primary font-medium text-sm">{t("profile.uploadClickText")}</span>
                             </Label>
                             <Input
                               id="key-upload"
@@ -1033,18 +1035,18 @@ const Profile = () => {
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="passphrase" className="text-sm font-medium mb-2 block">
-                            Certificate Passphrase
+                            {t("profile.labelPassphrase")}
                           </Label>
                           <Input
                             id="passphrase"
                             type="password"
-                            placeholder="Enter the passphrase for your private key"
+                            placeholder={t("profile.placeholderPassphrase")}
                             value={certificatePassphrase}
                             onChange={(e) => setCertificatePassphrase(e.target.value)}
                             className="h-9"
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            This passphrase will be stored securely and used when registering your certificate with Finkok.
+                            {t("profile.passphraseNote")}
                           </p>
                         </div>
 
@@ -1055,7 +1057,7 @@ const Profile = () => {
                             className="flex-1 sm:flex-none"
                           >
                             <Upload className="mr-2 h-4 w-4" />
-                            {isUploadingCertificate ? "Uploading..." : "Upload Certificate"}
+                            {isUploadingCertificate ? t("profile.buttonUploading") : t("profile.buttonUpload")}
                           </Button>
                           <Button
                             variant="outline"
@@ -1068,7 +1070,7 @@ const Profile = () => {
                             className="flex-1 sm:flex-none"
                           >
                             <X className="mr-2 h-4 w-4" />
-                            Clear
+                            {t("profile.buttonClear")}
                           </Button>
                         </div>
                       </div>
@@ -1079,8 +1081,8 @@ const Profile = () => {
                         <div className="flex gap-3">
                           <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm text-blue-800">
-                            <p className="font-medium mb-1">Upload your certificate files</p>
-                            <p className="text-blue-700">Your certificate and key will be securely stored and used for signing invoices automatically.</p>
+                            <p className="font-medium mb-1">{t("profile.alertUploadFiles")}</p>
+                            <p className="text-blue-700">{t("profile.alertUploadDesc")}</p>
                           </div>
                         </div>
                       </div>
@@ -1092,7 +1094,7 @@ const Profile = () => {
                         onClick={handleDeleteCertificate}
                         disabled={isDeletingCertificate}
                       >
-                        {isDeletingCertificate ? "Removing..." : "Remove Certificate"}
+                        {isDeletingCertificate ? t("profile.buttonRemoving") : t("profile.buttonRemove")}
                       </Button>
                     )}
                   </div>
@@ -1101,8 +1103,8 @@ const Profile = () => {
                     <div className="flex gap-3">
                       <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-amber-800">
-                        <p className="font-medium mb-1">RFC Required</p>
-                        <p className="text-amber-700">Please fill in your RFC in the Profile Details tab before uploading your certificate.</p>
+                        <p className="font-medium mb-1">{t("profile.alertRfcRequired")}</p>
+                        <p className="text-amber-700">{t("profile.alertRfcDesc")}</p>
                       </div>
                     </div>
                   </div>

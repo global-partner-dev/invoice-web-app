@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ interface SubscriptionData {
 }
 
 const Subscriptions = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: subscriptions = [], isLoading, error } = useQuery({
@@ -90,32 +92,32 @@ const Subscriptions = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div>
-            <h1 className="text-4xl font-bold">Subscription Management</h1>
+            <h1 className="text-4xl font-bold">{t("adminSubscriptions.title")}</h1>
             <p className="text-muted-foreground mt-2">
-              View and monitor all user subscriptions, plans, and invoice usage
+              {t("adminSubscriptions.subtitle")}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-600 font-medium mb-2">Total Subscriptions</p>
+            <p className="text-sm text-blue-600 font-medium mb-2">{t("adminSubscriptions.totalSubscriptions")}</p>
             <p className="text-3xl font-bold text-blue-900">{subscriptions.length}</p>
           </div>
           <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-            <p className="text-sm text-green-600 font-medium mb-2">Active</p>
+            <p className="text-sm text-green-600 font-medium mb-2">{t("adminSubscriptions.active")}</p>
             <p className="text-3xl font-bold text-green-900">
               {subscriptions.filter((s: SubscriptionData) => s.status === "active").length}
             </p>
           </div>
           <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
-            <p className="text-sm text-red-600 font-medium mb-2">Canceled</p>
+            <p className="text-sm text-red-600 font-medium mb-2">{t("adminSubscriptions.canceled")}</p>
             <p className="text-3xl font-bold text-red-900">
               {subscriptions.filter((s: SubscriptionData) => s.status === "canceled").length}
             </p>
           </div>
           <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200">
-            <p className="text-sm text-amber-600 font-medium mb-2">Other</p>
+            <p className="text-sm text-amber-600 font-medium mb-2">{t("adminSubscriptions.other")}</p>
             <p className="text-3xl font-bold text-amber-900">
               {subscriptions.filter((s: SubscriptionData) => !["active", "canceled"].includes(s.status)).length}
             </p>
@@ -124,9 +126,9 @@ const Subscriptions = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>All Subscriptions</CardTitle>
+            <CardTitle>{t("adminSubscriptions.allSubscriptions")}</CardTitle>
             <CardDescription>
-              Monitor subscription status, plans, and invoice limits for all users
+              {t("adminSubscriptions.allSubscriptionsDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -134,7 +136,7 @@ const Subscriptions = () => {
               <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-lg flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                  <p className="text-red-700">Failed to load subscriptions. Please try again later.</p>
+                  <p className="text-red-700">{t("adminSubscriptions.failedLoadSubscriptions")}</p>
                 </div>
                 <p className="text-red-600 text-sm font-mono">
                   {error instanceof Error ? error.message : String(error)}
@@ -146,7 +148,7 @@ const Subscriptions = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, phone, or plan..."
+                  placeholder={t("adminSubscriptions.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -159,15 +161,15 @@ const Subscriptions = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Invoices</TableHead>
-                    <TableHead>Period End</TableHead>
-                    <TableHead>Linked To</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnUserName")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnEmail")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnPhone")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnPlan")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnStatus")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnInvoices")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnPeriodEnd")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnLinkedTo")}</TableHead>
+                    <TableHead>{t("adminSubscriptions.columnCreated")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -176,7 +178,7 @@ const Subscriptions = () => {
                       <TableCell colSpan={9} className="text-center py-8">
                         <div className="flex justify-center items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-muted-foreground">Loading subscriptions...</span>
+                          <span className="text-muted-foreground">{t("adminSubscriptions.loadingSubscriptions")}</span>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -194,7 +196,7 @@ const Subscriptions = () => {
                         <TableCell>
                           <Badge className={getStatusColor(sub.status)}>
                             {sub.status}
-                            {sub.cancel_at_period_end && " (will cancel)"}
+                            {sub.cancel_at_period_end && ` (${t("adminSubscriptions.willCancel")})`}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">
@@ -205,7 +207,7 @@ const Subscriptions = () => {
                         </TableCell>
                         <TableCell className="text-sm">
                           {sub.user.related_account ? (
-                            <Badge variant="secondary">Linked</Badge>
+                            <Badge variant="secondary">{t("adminSubscriptions.linked")}</Badge>
                           ) : (
                             "—"
                           )}
@@ -218,7 +220,7 @@ const Subscriptions = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        {searchQuery ? "No subscriptions match your search" : "No subscriptions found"}
+                        {searchQuery ? t("adminSubscriptions.noMatchSearch") : t("adminSubscriptions.noSubscriptions")}
                       </TableCell>
                     </TableRow>
                   )}

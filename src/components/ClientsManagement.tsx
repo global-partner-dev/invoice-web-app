@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ interface ClientsManagementProps {
 }
 
 export function ClientsManagement({ userId }: ClientsManagementProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [clients, setClients] = useState<LinkedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,8 +46,8 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
       setClients(data);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load clients",
+        title: t("common.error"),
+        description: t("clients.failedAdd"),
         variant: "destructive",
       });
     } finally {
@@ -58,8 +60,8 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
 
     if (!formData.fullName.trim()) {
       toast({
-        title: "Error",
-        description: "Client name is required",
+        title: t("common.error"),
+        description: t("clients.nameRequired"),
         variant: "destructive",
       });
       return;
@@ -67,8 +69,8 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
 
     if (!formData.email.trim()) {
       toast({
-        title: "Error",
-        description: "Client email is required",
+        title: t("common.error"),
+        description: t("clients.emailRequired"),
         variant: "destructive",
       });
       return;
@@ -76,8 +78,8 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
 
     if (!formData.phoneNumber.trim()) {
       toast({
-        title: "Error",
-        description: "Client phone is required",
+        title: t("common.error"),
+        description: t("clients.phoneRequired"),
         variant: "destructive",
       });
       return;
@@ -96,13 +98,13 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
       setIsDialogOpen(false);
 
       toast({
-        title: "Success",
-        description: "Client added successfully. Password: zxcQWE123!@#",
+        title: t("common.success"),
+        description: t("clients.addedSuccess"),
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add client",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("clients.failedAdd"),
         variant: "destructive",
       });
     } finally {
@@ -117,13 +119,13 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
       setClients(clients.filter((c) => c.id !== clientId));
 
       toast({
-        title: "Success",
-        description: "Client removed successfully",
+        title: t("common.success"),
+        description: t("clients.removedSuccess"),
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to remove client",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("clients.failedRemove"),
         variant: "destructive",
       });
     } finally {
@@ -138,9 +140,9 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Your Clients</CardTitle>
+              <CardTitle>{t("clients.title")}</CardTitle>
               <CardDescription>
-                Manage users linked to your account
+                {t("clients.subtitle")}
               </CardDescription>
             </div>
           </div>
@@ -148,23 +150,23 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
                 <Plus className="h-4 w-4" />
-                Add Client
+                {t("clients.addButton")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Client</DialogTitle>
+                <DialogTitle>{t("clients.addTitle")}</DialogTitle>
                 <DialogDescription>
-                  Create a new user account and link them as your client.
+                  {t("clients.addDescription")}
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={handleAddClient} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="client-name">Full Name *</Label>
+                  <Label htmlFor="client-name">{t("clients.fullName")} {t("clients.required")}</Label>
                   <Input
                     id="client-name"
-                    placeholder="John Doe"
+                    placeholder={t("clients.placeholderName")}
                     value={formData.fullName}
                     onChange={(e) =>
                       setFormData({ ...formData, fullName: e.target.value })
@@ -175,11 +177,11 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="client-email">Email *</Label>
+                  <Label htmlFor="client-email">{t("clients.email")} {t("clients.required")}</Label>
                   <Input
                     id="client-email"
                     type="email"
-                    placeholder="client@example.com"
+                    placeholder={t("clients.placeholderEmail")}
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
@@ -190,10 +192,10 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="client-phone">Phone *</Label>
+                  <Label htmlFor="client-phone">{t("clients.phone")} {t("clients.required")}</Label>
                   <Input
                     id="client-phone"
-                    placeholder="52 1 222 333 4444"
+                    placeholder={t("clients.placeholderPhone")}
                     value={formData.phoneNumber}
                     onChange={(e) =>
                       setFormData({ ...formData, phoneNumber: e.target.value })
@@ -204,7 +206,7 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isAdding}>
-                  {isAdding ? "Creating..." : "Create and Link Client"}
+                  {isAdding ? t("clients.creating") : t("clients.createAndLink")}
                 </Button>
               </form>
             </DialogContent>
@@ -215,16 +217,16 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
       <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <p className="text-sm text-muted-foreground">Loading clients...</p>
+            <p className="text-sm text-muted-foreground">{t("clients.loading")}</p>
           </div>
         ) : clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
             <p className="text-sm font-medium text-muted-foreground mb-2">
-              No clients yet
+              {t("clients.noClients")}
             </p>
             <p className="text-xs text-muted-foreground">
-              Add your first client to get started
+              {t("clients.noClientsDesc")}
             </p>
           </div>
         ) : (
@@ -235,7 +237,7 @@ export function ClientsManagement({ userId }: ClientsManagementProps) {
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{client.full_name || "Unnamed Client"}</p>
+                  <p className="font-medium text-sm">{client.full_name || t("clients.unnamed")}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     {client.phone_number && (
                       <span>📱 {client.phone_number}</span>
