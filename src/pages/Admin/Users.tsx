@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Search, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { getAllUsers, updateUserAsAdmin, deleteUserAsAdmin } from "@/lib/api";
+import { getAllUsers, updateUserAsAdmin, deleteUserAsAdmin, getAllSubscriptionsWithUsers } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface User {
@@ -30,8 +30,12 @@ interface User {
   phone_number: string | null;
   full_name: string | null;
   email: string | null;
-  status?: "active" | "inactive" | "pending";
   created_at: string;
+}
+
+interface SubscriptionInfo {
+  plan_name: string | null;
+  status: string | null;
 }
 
 const Users = () => {
@@ -46,10 +50,27 @@ const Users = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading, error } = useQuery({
+  const { data: users = [], isLoading: usersLoading, error } = useQuery({
     queryKey: ["users"],
     queryFn: getAllUsers,
   });
+
+  const { data: subscriptions = [], isLoading: subscriptionsLoading } = useQuery({
+    queryKey: ["admin-subscriptions-users"],
+    queryFn: getAllSubscriptionsWithUsers,
+  });
+
+  const subscriptionMap = new Map<string, SubscriptionInfo>();
+  subscriptions.forEach((sub: any) => {
+    if (sub.user_id) {
+      subscriptionMap.set(sub.user_id, {
+        plan_name: sub.subscription_plan?.name || null,
+        status: sub.status,
+      });
+    }
+  });
+
+  const isLoading = usersLoading || subscriptionsLoading;
 
   const updateUserMutation = useMutation({
     mutationFn: (data: typeof editFormData) =>
@@ -91,19 +112,6 @@ const Users = () => {
       (user.email?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
       (user.phone_number?.includes(searchQuery) || false)
   );
-
-  const getStatusColor = (status: User["status"]) => {
-    switch (status) {
-      case "active":
-        return "bg-secondary text-secondary-foreground";
-      case "pending":
-        return "bg-yellow-500 text-white";
-      case "inactive":
-        return "bg-muted text-muted-foreground";
-      default:
-        return "bg-muted";
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -187,7 +195,7 @@ const Users = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone Number</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Subscription Plan</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -203,38 +211,43 @@ const Users = () => {
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.full_name || "—"}</TableCell>
-                        <TableCell>{user.email || "—"}</TableCell>
-                        <TableCell>{user.phone_number || "—"}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(user.status || "active")}>
-                            {user.status || "active"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(user.created_at)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleEditClick(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleDeleteUser(user.id)}
-                              disabled={deleteUserMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredUsers.map((user) => {
+                      const subInfo = subscriptionMap.get(user.id);
+                      return (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.full_name || "—"}</TableCell>
+                          <TableCell>{user.email || "—"}</TableCell>
+                          <TableCell>{user.phone_number || "—"}</TableCell>
+                          <TableCell>
+                            {subInfo?.plan_name ? (
+                              <Badge variant="outline">{subInfo.plan_name}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">No Plan</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{formatDate(user.created_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditClick(user)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleDeleteUser(user.id)}
+                                disabled={deleteUserMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
