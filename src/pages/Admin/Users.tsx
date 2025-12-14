@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, UserPlus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Search, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { getAllUsers } from "@/lib/api";
+import { getAllUsers, updateUserAsAdmin, deleteUserAsAdmin } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: string;
@@ -27,9 +36,53 @@ interface User {
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    full_name: "",
+    email: "",
+    phone_number: "",
+  });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ["users"],
     queryFn: getAllUsers,
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: (data: typeof editFormData) =>
+      updateUserAsAdmin(selectedUser!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setOpenEditDialog(false);
+      setSelectedUser(null);
+      setEditFormData({ full_name: "", email: "", phone_number: "" });
+      toast({ title: "Success", description: "User updated successfully" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: string) => deleteUserAsAdmin(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "Success", description: "User deleted successfully" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete user",
+        variant: "destructive",
+      });
+    },
   });
 
   const filteredUsers = users.filter(
@@ -60,20 +113,40 @@ const Users = () => {
     });
   };
 
+  const handleEditClick = (user: User) => {
+    setSelectedUser(user);
+    setEditFormData({
+      full_name: user.full_name || "",
+      email: user.email || "",
+      phone_number: user.phone_number || "",
+    });
+    setOpenEditDialog(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editFormData.full_name || !editFormData.email || !editFormData.phone_number) {
+      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+      return;
+    }
+    updateUserMutation.mutate(editFormData);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (confirm("Are you sure you want to delete this user?")) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
+
   return (
     <DashboardLayout userRole="admin">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6">
           <div>
             <h1 className="text-4xl font-bold">User Management</h1>
             <p className="text-muted-foreground mt-2">
               Manage and monitor all registered users
             </p>
           </div>
-          <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
         </div>
 
         <Card>
@@ -143,10 +216,19 @@ const Users = () => {
                         <TableCell>{formatDate(user.created_at)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleEditClick(user)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={deleteUserMutation.isPending}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -165,6 +247,58 @@ const Users = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Full Name</label>
+                <Input
+                  value={editFormData.full_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone Number</label>
+                <Input
+                  value={editFormData.phone_number}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
+                  placeholder="+1234567890"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setOpenEditDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateUser}
+                disabled={updateUserMutation.isPending}
+              >
+                {updateUserMutation.isPending ? "Updating..." : "Update User"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

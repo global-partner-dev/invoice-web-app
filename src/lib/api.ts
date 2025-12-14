@@ -760,3 +760,111 @@ export async function unlinkUser(userId: string) {
     throw error;
   }
 }
+
+export async function createUserAsAdmin(email: string, password: string, fullName: string, phoneNumber: string) {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-user-admin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        fullName,
+        phoneNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create user");
+    }
+
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error("Create user as admin error:", error);
+    throw error;
+  }
+}
+
+export async function updateUserAsAdmin(userId: string, updates: { full_name?: string; email?: string; phone_number?: string }) {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Update user as admin error:", error);
+    throw error;
+  }
+}
+
+export async function deleteUserAsAdmin(userId: string) {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (!token) {
+      throw new Error("User is not authenticated");
+    }
+
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/delete-user-admin`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to delete user");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Delete user as admin error:", error);
+    throw error;
+  }
+}
+
+export async function getAllSubscriptionsWithUsers() {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (!token) {
+      throw new Error("User is not authenticated");
+    }
+
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/get-all-subscriptions`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to fetch subscriptions");
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error("Get all subscriptions error:", error);
+    throw error;
+  }
+}

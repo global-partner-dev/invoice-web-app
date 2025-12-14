@@ -12,6 +12,7 @@ import Subscription from "./pages/Subscription";
 import Profile from "./pages/Dashboard/Profile";
 import Subscriptions from "./pages/Dashboard/Subscriptions";
 import Users from "./pages/Admin/Users";
+import AdminSubscriptions from "./pages/Admin/Subscriptions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,14 @@ const App = () => (
             element={
               <AdminProtectedRoute>
                 <Users />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/subscriptions"
+            element={
+              <AdminProtectedRoute>
+                <AdminSubscriptions />
               </AdminProtectedRoute>
             }
           />

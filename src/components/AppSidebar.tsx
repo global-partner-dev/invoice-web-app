@@ -1,4 +1,4 @@
-import { User, Users, LogOut, Menu, CreditCard } from "lucide-react";
+import { User, Users, LogOut, Menu, CreditCard, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -36,6 +36,7 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
 
   const adminItems = [
     { title: "User Management", url: "/admin/users", icon: Users },
+    { title: "Subscriptions", url: "/admin/subscriptions", icon: BarChart3 },
   ];
 
   let items = userRole === "admin" ? adminItems : userItems;
