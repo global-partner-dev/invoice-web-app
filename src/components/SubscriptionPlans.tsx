@@ -110,7 +110,7 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
           <CardHeader className="px-4 sm:px-6 py-4">
             <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
               {plan.name}
-              <span className="text-primary">${plan.price_monthly}</span>
+              <span className="text-primary">MX${plan.price_monthly}</span>
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">{plan.description}</CardDescription>
           </CardHeader>
