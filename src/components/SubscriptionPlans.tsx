@@ -13,6 +13,7 @@ interface Plan {
   stripe_product_id: string;
   description: string;
   features: string[];
+  price_monthly: number;
 }
 
 interface SubscriptionPlansProps {
@@ -45,7 +46,7 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
     };
 
     fetchPlans();
-  }, [toast]);
+  }, [toast, t]);
 
   const handleSelectPlan = async (plan: Plan) => {
     if (!email) {
@@ -107,7 +108,10 @@ export function SubscriptionPlans({ email, onClose }: SubscriptionPlansProps) {
           }`}
         >
           <CardHeader className="px-4 sm:px-6 py-4">
-            <CardTitle className="text-lg sm:text-xl">{plan.name}</CardTitle>
+            <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+              {plan.name}
+              <span className="text-primary">${plan.price_monthly}</span>
+            </CardTitle>
             <CardDescription className="text-xs sm:text-sm">{plan.description}</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 space-y-4 sm:space-y-6 px-4 sm:px-6">
