@@ -2,6 +2,7 @@ import { User, Users, LogOut, Menu, CreditCard, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "@/components/NavLink";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   Sidebar,
   SidebarContent,
@@ -110,7 +111,11 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
         </SidebarGroup>
       </SidebarContent>
 
-      <div className="mt-auto p-2 sm:p-4 border-t">
+      <div className="mt-auto p-2 sm:p-4 border-t space-y-2">
+        <div className={`flex ${open ? 'justify-between' : 'justify-center'} items-center`}>
+          {open && <span className="text-sm text-muted-foreground">{t("language.selectLanguage")}</span>}
+          <LanguageSwitcher />
+        </div>
         <Button
           variant="ghost"
           className="w-full justify-start text-sm sm:text-base h-9 sm:h-10 px-2 sm:px-4"

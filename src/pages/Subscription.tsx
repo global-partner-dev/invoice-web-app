@@ -10,6 +10,7 @@ import { SubscriptionPlans } from "@/components/SubscriptionPlans";
 import { useToast } from "@/hooks/use-toast";
 import { signupWithEmail, validatePassword, loginWithEmail } from "@/lib/api";
 import { normalizePhoneNumber } from "@/lib/utils";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Subscription = () => {
   const { t } = useTranslation();
@@ -111,7 +112,10 @@ const Subscription = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-3 sm:px-4 py-6 sm:py-8 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-3 sm:px-4 py-6 sm:py-8 flex items-center justify-center relative">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <div className="container mx-auto w-full max-w-4xl px-0 sm:px-4">
         <Button
           variant="ghost"

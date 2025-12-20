@@ -4,6 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Menu } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -18,13 +19,16 @@ const MobileHeader = () => {
   return (
     <div className="sm:hidden sticky top-0 z-40 bg-white border-b">
       <div className="flex items-center justify-between p-3 sm:p-4">
-        <h1 className="text-base font-semibold text-foreground">{t("common.invoiceApp")}</h1>
-        <button
-          onClick={toggleSidebar}
-          className="p-2 hover:bg-muted rounded-md transition-colors"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleSidebar}
+            className="p-2 hover:bg-muted rounded-md transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <h1 className="text-base font-semibold text-foreground">{t("common.invoiceApp")}</h1>
+        </div>
+        <LanguageSwitcher />
       </div>
     </div>
   );

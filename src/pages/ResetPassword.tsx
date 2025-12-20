@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { updatePasswordAfterReset, validatePassword } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const ResetPassword = () => {
   const { t } = useTranslation();
@@ -89,7 +90,10 @@ const ResetPassword = () => {
 
   if (isValidSession === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 relative">
+        <div className="absolute top-4 right-4 z-50">
+          <LanguageSwitcher />
+        </div>
         <Card className="w-full max-w-sm shadow-elegant">
           <CardContent className="pt-6">
             <div className="text-center">{t("resetPassword.loading")}</div>
@@ -101,7 +105,10 @@ const ResetPassword = () => {
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 relative">
+        <div className="absolute top-4 right-4 z-50">
+          <LanguageSwitcher />
+        </div>
         <Card className="w-full max-w-sm shadow-elegant">
           <CardHeader className="space-y-3">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto" />
@@ -121,7 +128,10 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 relative">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-sm shadow-elegant">
         {isSuccess ? (
           <CardHeader className="space-y-3">

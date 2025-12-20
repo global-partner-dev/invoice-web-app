@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { loginWithEmail, checkIfAdmin } from "@/lib/api";
 import ForgotPassword from "@/components/ForgotPassword";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Login = () => {
   const { t } = useTranslation();
@@ -57,7 +58,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 md:py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 md:py-12 relative">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-sm md:max-w-md shadow-elegant">
         <CardHeader className="space-y-3 md:space-y-1">
           <CardTitle className="text-2xl md:text-3xl font-bold text-center">{t("login.title")}</CardTitle>
