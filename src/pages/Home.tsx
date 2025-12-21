@@ -5,9 +5,12 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import heroBackground from "@/assets/hero-background.jpg";
+import { useAuth } from "@/hooks/useAuth";
 
 const Home = () => {
   const { t } = useTranslation();
+  const { user, loading } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Language Switcher */}
@@ -37,12 +40,20 @@ const Home = () => {
               {t("home.heroSubtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500 fill-mode-both">
-              <Button asChild size="lg" variant="secondary" className="shadow-elegant hover:shadow-hover hover:scale-105 transition-all duration-300 text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6">
-                <Link to="/login">{t("common.getStarted")}</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm hover:scale-105 transition-all duration-300 text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6">
-                <Link to="/login">{t("common.login")}</Link>
-              </Button>
+              {!loading && user ? (
+                <Button asChild size="lg" variant="secondary" className="shadow-elegant hover:shadow-hover hover:scale-105 transition-all duration-300 text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6">
+                  <Link to="/dashboard/profile">{t("common.goToDashboard")}</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button asChild size="lg" variant="secondary" className="shadow-elegant hover:shadow-hover hover:scale-105 transition-all duration-300 text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6">
+                    <Link to="/login">{t("common.getStarted")}</Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm hover:scale-105 transition-all duration-300 text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6">
+                    <Link to="/login">{t("common.login")}</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

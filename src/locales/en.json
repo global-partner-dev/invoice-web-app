@@ -11,7 +11,8 @@
     "loading": "Loading",
     "processing": "Processing",
     "invoiceApp": "Invoice App",
-    "home": "Home"
+    "home": "Home",
+    "goToDashboard": "Go to Dashboard"
   },
   "home": {
     "heroTitle": "Automatic Invoice Generation",

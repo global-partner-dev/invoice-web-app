@@ -11,7 +11,8 @@
     "loading": "Cargando",
     "processing": "Procesando",
     "invoiceApp": "Aplicación de Facturas",
-    "home": "Inicio"
+    "home": "Inicio",
+    "goToDashboard": "Ir al Panel de Control"
   },
   "home": {
     "heroTitle": "Generación Automática de Facturas",
