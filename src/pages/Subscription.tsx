@@ -113,6 +113,16 @@ const Subscription = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-3 sm:px-4 py-6 sm:py-8 flex items-center justify-center relative">
+      <div className="absolute top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          className="gap-2"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">{t("common.home")}</span>
+        </Button>
+      </div>
       <div className="absolute top-4 right-4 z-50">
         <LanguageSwitcher />
       </div>

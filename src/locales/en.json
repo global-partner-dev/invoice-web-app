@@ -10,7 +10,8 @@
     "done": "Done",
     "loading": "Loading",
     "processing": "Processing",
-    "invoiceApp": "Invoice App"
+    "invoiceApp": "Invoice App",
+    "home": "Home"
   },
   "home": {
     "heroTitle": "Automatic Invoice Generation",

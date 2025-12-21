@@ -10,7 +10,8 @@
     "done": "Listo",
     "loading": "Cargando",
     "processing": "Procesando",
-    "invoiceApp": "Aplicación de Facturas"
+    "invoiceApp": "Aplicación de Facturas",
+    "home": "Inicio"
   },
   "home": {
     "heroTitle": "Generación Automática de Facturas",

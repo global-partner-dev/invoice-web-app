@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Menu } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { Link } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -12,21 +13,23 @@ interface DashboardLayoutProps {
   isLinkedUser?: boolean;
 }
 
-const MobileHeader = () => {
+const DashboardHeader = () => {
   const { t } = useTranslation();
   const { toggleSidebar } = useSidebar();
 
   return (
-    <div className="sm:hidden sticky top-0 z-40 bg-white border-b">
+    <div className="sticky top-0 z-40 bg-white border-b">
       <div className="flex items-center justify-between p-3 sm:p-4">
         <div className="flex items-center gap-2">
           <button
             onClick={toggleSidebar}
-            className="p-2 hover:bg-muted rounded-md transition-colors"
+            className="p-2 hover:bg-muted rounded-md transition-colors sm:hidden"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <h1 className="text-base font-semibold text-foreground">{t("common.invoiceApp")}</h1>
+          <Link to="/" className="text-base font-semibold text-foreground hover:opacity-80 transition-opacity">
+            {t("common.invoiceApp")}
+          </Link>
         </div>
         <LanguageSwitcher />
       </div>
@@ -40,7 +43,7 @@ const DashboardLayout = ({ children, userRole = "user", isLinkedUser = false }: 
       <div className="min-h-screen flex w-full flex-col sm:flex-row">
         <AppSidebar userRole={userRole} isLinkedUser={isLinkedUser} />
         <div className="flex-1 flex flex-col w-full">
-          <MobileHeader />
+          <DashboardHeader />
           <main className="flex-1 p-3 sm:p-6 md:p-8 bg-muted/30 overflow-auto">
             {children}
           </main>

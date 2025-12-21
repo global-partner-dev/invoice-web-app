@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { loginWithEmail, checkIfAdmin } from "@/lib/api";
 import ForgotPassword from "@/components/ForgotPassword";
@@ -59,6 +59,16 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 px-4 py-8 md:py-12 relative">
+      <div className="absolute top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          className="gap-2"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">{t("common.home")}</span>
+        </Button>
+      </div>
       <div className="absolute top-4 right-4 z-50">
         <LanguageSwitcher />
       </div>

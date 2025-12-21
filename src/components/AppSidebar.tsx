@@ -16,7 +16,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { logout } from "@/lib/api";
 
@@ -76,9 +76,9 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
     <Sidebar collapsible="icon" className="border-r hidden sm:flex">
       <div className="p-2 sm:p-4 flex items-center justify-between border-b gap-2">
         {open && (
-          <h2 className="text-base sm:text-lg font-semibold text-sidebar-foreground truncate">
+          <Link to="/" className="text-base sm:text-lg font-semibold text-sidebar-foreground truncate hover:opacity-80 transition-opacity">
             {t("common.invoiceApp")}
-          </h2>
+          </Link>
         )}
         <SidebarTrigger className="h-8 w-8 sm:h-10 sm:w-10">
           <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -112,19 +112,15 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
       </SidebarContent>
 
       <div className="mt-auto p-2 sm:p-4 border-t space-y-2">
-        <div className={`flex ${open ? 'justify-between' : 'justify-center'} items-center`}>
-          {open && <span className="text-sm text-muted-foreground">{t("language.selectLanguage")}</span>}
-          <LanguageSwitcher />
-        </div>
         <Button
           variant="ghost"
-          className="w-full justify-start text-sm sm:text-base h-9 sm:h-10 px-2 sm:px-4"
+          className={`w-full ${open ? 'justify-start' : 'justify-center'} text-sm sm:text-base h-9 sm:h-10 px-2 sm:px-4`}
           onClick={handleLogout}
           disabled={isLoggingOut}
         >
-          <LogOut className="h-4 w-4 sm:h-5 sm:w-5 mr-0 sm:mr-2 flex-shrink-0" />
+          <LogOut className={`h-4 w-4 sm:h-5 sm:w-5 ${open ? 'mr-2' : 'mr-0'} flex-shrink-0`} />
           {open && (
-            <span className="hidden sm:inline ml-2">
+            <span className="ml-2">
               {isLoggingOut ? t("sidebar.loggingOut") : t("common.logout")}
             </span>
           )}
