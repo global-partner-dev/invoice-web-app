@@ -114,7 +114,7 @@ export function AppSidebar({ userRole, isLinkedUser = false }: AppSidebarProps) 
       <div className="mt-auto p-2 sm:p-4 border-t space-y-2">
         <Button
           variant="ghost"
-          className={`w-full ${open ? 'justify-start' : 'justify-center'} text-sm sm:text-base h-9 sm:h-10 px-2 sm:px-4`}
+          className={`w-full ${open ? 'justify-start px-2 sm:px-4' : 'justify-center px-0'} text-sm sm:text-base h-9 sm:h-10`}
           onClick={handleLogout}
           disabled={isLoggingOut}
         >
