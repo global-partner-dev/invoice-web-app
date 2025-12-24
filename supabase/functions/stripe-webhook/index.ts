@@ -11,9 +11,9 @@ const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 function getPlanInvoiceLimit(stripeProductId: string): number {
   const PLAN_LIMITS: Record<string, number> = {
-    'prod_TNzwfr5LsNLC9b': 50,
-    'prod_TO00dJw423j5fk': 100,
-    'prod_TO01G6FwP0mI9R': 250,
+    'prod_TMzQDNIxiSVHWC': 50,
+    'prod_TdQOAD9P3N9Fny': 100,
+    'prod_TdQQKL7V2dRtAT': 250,
   };
   
   return PLAN_LIMITS[stripeProductId] || 0;
@@ -304,6 +304,76 @@ serve(async (req: Request) => {
             }),
           }
         );
+        break;
+      }
+
+      case "checkout.session.completed": {
+        const session = event.data.object as Record<string, any>;
+        if (session.mode === "payment" && session.metadata?.topupProductId) {
+          const email = session.metadata.email;
+          const topupProductId = session.metadata.topupProductId;
+
+          console.log(`Processing top-up for ${email}, product: ${topupProductId}`);
+
+          // 1. Get User
+          const userResponse = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${email}`, {
+            headers: {
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              apikey: supabaseServiceRoleKey || "",
+            },
+          }).then((r) => r.json());
+
+          const user = userResponse[0];
+          if (!user) {
+            console.error("User not found for top-up:", email);
+            break;
+          }
+
+          // 2. Get Topup Product details
+          const topupProductResponse = await fetch(`${supabaseUrl}/rest/v1/topup_products?id=eq.${topupProductId}`, {
+            headers: {
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              apikey: supabaseServiceRoleKey || "",
+            },
+          }).then((r) => r.json());
+
+          const topupProduct = topupProductResponse[0];
+          if (!topupProduct) {
+            console.error("Topup product not found in DB:", topupProductId);
+            break;
+          }
+
+          // 3. Get Active Subscription
+          const subResponse = await fetch(`${supabaseUrl}/rest/v1/subscriptions?user_id=eq.${user.id}&status=eq.active`, {
+            headers: {
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              apikey: supabaseServiceRoleKey || "",
+            },
+          }).then((r) => r.json());
+
+          const subscription = subResponse[0];
+          if (!subscription) {
+            console.error("No active subscription found for top-up user:", user.id);
+            break;
+          }
+
+          // 4. Update available invoices
+          const newAvailable = (subscription.available_invoices || 0) + topupProduct.invoice_count;
+          
+          await fetch(`${supabaseUrl}/rest/v1/subscriptions?id=eq.${subscription.id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
+              apikey: supabaseServiceRoleKey || "",
+            },
+            body: JSON.stringify({
+              available_invoices: newAvailable,
+            }),
+          });
+
+          console.log(`Top-up successful: Added ${topupProduct.invoice_count} to user ${user.id}. New total: ${newAvailable}`);
+        }
         break;
       }
 

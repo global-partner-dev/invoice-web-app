@@ -1,1 +1,2 @@
+/api/stripe/webhook  https://crlfijypfiizqekpuqca.supabase.co/functions/v1/stripe-webhook  200
 /*    /index.html   200
