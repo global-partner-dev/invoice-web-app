@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+README.md
+Dockerfile
+nginx.conf
+.zencoder
+.zenflow

@@ -44,21 +44,21 @@
   "usageStats": {
     "title": "Invoice Usage",
     "plan": "Plan",
-    "available": "available",
-    "topup": "topup",
-    "used": "used",
+    "available": "Available",
+    "topup": "top-up",
+    "used": "Used",
     "notAvailable": "N/A",
     "noInvoices": "No Invoices Available",
     "noInvoicesDesc": "Purchase a top-up to continue generating invoices.",
     "upgradeBasic": "Upgrade to Basic Plan",
     "upgradePlan": "Upgrade Plan",
     "quickTopup": "Quick Top-up",
-    "forPesos": "for pesos",
+    "forPesos": "for",
     "invoice": "invoice",
     "invoices": "invoices",
     "youHaveAvailable": "You have {{count}} {{pluralized}} available.",
     "failedRecharge": "Failed to initiate recharge",
-    "failedTopup": "Failed to initiate topup purchase"
+    "failedTopup": "Failed to initiate top-up purchase"
   },
   "subscriptionPlans": {
     "loadingPlans": "Loading subscription plans...",
@@ -136,7 +136,7 @@
     "limitReached": "Invoice limit reached",
     "limitReachedDesc": "Purchase additional invoices or upgrade your plan to continue creating invoices.",
     "activeAddons": "Active Add-ons",
-    "activeAddonsDesc": "Your active invoice topups",
+    "activeAddonsDesc": "Your active invoice top-ups",
     "expires": "Expires",
     "buyMoreInvoices": "Buy More Invoices",
     "buyMoreInvoicesDesc": "Purchase additional invoices for your account",
@@ -146,7 +146,7 @@
     "noPlansAvailable": "No subscription plans available",
     "failedLoadInfo": "Failed to load subscription information",
     "failedCheckout": "Failed to create checkout session",
-    "failedTopup": "Failed to create topup session"
+    "failedTopup": "Failed to create top-up session"
   },
   "users": {
     "title": "User Management",
@@ -206,10 +206,10 @@
     "noMatchSearch": "No subscriptions match your search",
     "noSubscriptions": "No subscriptions found",
     "failedLoadSubscriptions": "Failed to load subscriptions. Please try again later.",
-    "statusActive": "active",
-    "statusCanceled": "canceled",
-    "statusPastDue": "past_due",
-    "statusUnpaid": "unpaid",
+    "statusActive": "Active",
+    "statusCanceled": "Canceled",
+    "statusPastDue": "Past Due",
+    "statusUnpaid": "Unpaid",
     "willCancel": "will cancel",
     "linked": "Linked"
   },
@@ -268,7 +268,7 @@
     "phoneFormat": "Any format accepted (e.g. +52 1 722 101 5653, 52 1 722 101 5653)",
     "labelPassword": "Password",
     "placeholderPassword": "Enter password",
-    "passwordRequirements": "Min 8 chars, uppercase letter, number, special character",
+    "passwordRequirements": "Minimum 8 characters, includes uppercase, number, and special character",
     "labelConfirmPassword": "Confirm Password",
     "placeholderConfirmPassword": "Confirm password",
     "buttonContinue": "Continue to Plans",
