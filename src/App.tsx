@@ -23,7 +23,6 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-      //this is router
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
